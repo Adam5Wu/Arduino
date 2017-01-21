@@ -73,6 +73,8 @@ public:
     operator bool() const;
     const char* name() const;
 
+    time_t mtime() const;
+
 protected:
     FileImplPtr _p;
 };
@@ -81,10 +83,21 @@ class Dir {
 public:
     Dir(DirImplPtr impl = DirImplPtr()): _impl(impl) { }
 
+    File openFile(const char* name, const char* mode);
+    Dir openDir(const char* name, bool create = false);
     File openFile(const char* mode);
-    String fileName();
-    size_t fileSize();
-    bool next();
+    Dir openDir();
+    bool remove(const char* name);
+    bool remove();
+    String entryName() const;
+    size_t entrySize() const;
+    time_t entryMtime() const;
+    bool isEntryDir() const;
+    bool isDir(const char* name) const;
+    const char* name() const;
+    time_t mtime() const;
+    bool next(bool reset = false);
+    operator bool() const;
 
 protected:
     DirImplPtr _impl;
@@ -106,7 +119,7 @@ public:
 
     bool begin();
     void end();
-    
+
     bool format();
     bool info(FSInfo& info);
 
@@ -116,8 +129,14 @@ public:
     bool exists(const char* path);
     bool exists(const String& path);
 
-    Dir openDir(const char* path);
-    Dir openDir(const String& path);
+    bool isDir(const char* path);
+    bool isDir(const String& path);
+
+    time_t mtime(const char* path);
+    time_t mtime(const String& path);
+
+    Dir openDir(const char* path, bool create = false);
+    Dir openDir(const String& path, bool create = false);
 
     bool remove(const char* path);
     bool remove(const String& path);

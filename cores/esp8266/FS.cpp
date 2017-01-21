@@ -121,6 +121,15 @@ const char* File::name() const {
     return _p->name();
 }
 
+time_t File::mtime() const {
+    if (!_p) {
+        time_t ret{0};
+        return ret;
+    }
+
+    return _p->mtime();
+}
+
 File Dir::openFile(const char* mode) {
     if (!_impl) {
         return File();
@@ -136,28 +145,119 @@ File Dir::openFile(const char* mode) {
     return File(_impl->openFile(om, am));
 }
 
-String Dir::fileName() {
+Dir Dir::openDir() {
+    if (!_impl) {
+        return Dir();
+    }
+
+    return Dir(_impl->openDir());
+}
+
+File Dir::openFile(const char* name, const char* mode) {
+    if (!_impl) {
+        return File();
+    }
+
+    OpenMode om;
+    AccessMode am;
+    if (!sflags(mode, om, am)) {
+        DEBUGV("Dir::openFile: invalid mode `%s`\r\n", mode);
+        return File();
+    }
+
+    return File(_impl->openFile(name, om, am));
+}
+
+Dir Dir::openDir(const char* name, bool create) {
+    if (!_impl) {
+        return Dir();
+    }
+
+    return Dir(_impl->openDir(name, create));
+}
+
+bool Dir::remove() {
+  if (!_impl) {
+    return false;
+  }
+
+  return _impl->remove();
+}
+
+bool Dir::remove(const char* name) {
+  if (!_impl) {
+    return false;
+  }
+
+  return _impl->remove(name);
+}
+
+String Dir::entryName() const {
     if (!_impl) {
         return String();
     }
 
-    return _impl->fileName();
+    return _impl->entryName();
 }
 
-size_t Dir::fileSize() {
+size_t Dir::entrySize() const {
     if (!_impl) {
         return 0;
     }
 
-    return _impl->fileSize();
+    return _impl->entrySize();
 }
 
-bool Dir::next() {
+time_t Dir::entryMtime() const {
+    if (!_impl) {
+        return 0;
+    }
+
+    return _impl->entryMtime();
+}
+
+bool Dir::isEntryDir() const {
     if (!_impl) {
         return false;
     }
 
-    return _impl->next();
+    return _impl->isEntryDir();
+}
+
+bool Dir::isDir(const char* name) const {
+    if (!_impl) {
+        return false;
+    }
+
+    return _impl->isDir(name);
+}
+
+const char* Dir::name() const {
+    if (!_impl) {
+        return NULL;
+    }
+
+    return _impl->name();
+}
+
+time_t Dir::mtime() const {
+    if (!_impl) {
+        return 0;
+    }
+
+    return _impl->mtime();
+}
+
+bool Dir::next(bool reset) {
+    if (!_impl) {
+        return false;
+    }
+
+    return _impl->next(reset);
+}
+
+Dir::operator bool() const {
+    return !!_impl;
 }
 
 bool FS::begin() {
@@ -217,15 +317,37 @@ bool FS::exists(const String& path) {
     return exists(path.c_str());
 }
 
-Dir FS::openDir(const char* path) {
+bool FS::isDir(const char* path) {
+    if (!_impl) {
+        return false;
+    }
+    return _impl->isDir(path);
+}
+
+bool FS::isDir(const String& path) {
+    return exists(path.c_str());
+}
+
+time_t FS::mtime(const char* path) {
+    if (!_impl) {
+        return false;
+    }
+    return _impl->mtime(path);
+}
+
+time_t FS::mtime(const String& path) {
+    return mtime(path.c_str());
+}
+
+Dir FS::openDir(const char* path, bool create) {
     if (!_impl) {
         return Dir();
     }
-    return Dir(_impl->openDir(path));
+    return Dir(_impl->openDir(path, create));
 }
 
-Dir FS::openDir(const String& path) {
-    return openDir(path.c_str());
+Dir FS::openDir(const String& path, bool create) {
+    return openDir(path.c_str(), create);
 }
 
 bool FS::remove(const char* path) {
