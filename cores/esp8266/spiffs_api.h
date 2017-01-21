@@ -58,9 +58,16 @@ public:
     {
     }
 
-    FileImplPtr open(const char* path, OpenMode openMode, AccessMode accessMode) override;
     bool exists(const char* path) override;
-    DirImplPtr openDir(const char* path) override;
+    bool isDir(const char* path) override {
+        return false;
+    }
+    time_t mtime(const char* path) override {
+        return 0;
+    }
+
+    FileImplPtr open(const char* path, OpenMode openMode, AccessMode accessMode) override;
+    DirImplPtr openDir(const char* path, bool create) override;
 
     bool rename(const char* pathFrom, const char* pathTo) override
     {
@@ -354,6 +361,11 @@ public:
         return _stat.size;
     }
 
+    time_t mtime() const override
+    {
+        return 0;
+    }
+
     void close() override
     {
         CHECKFD();
@@ -419,7 +431,39 @@ public:
         return std::make_shared<SPIFFSFileImpl>(_fs, fd);
     }
 
-    const char* fileName() override
+    FileImplPtr openFile(const char* name, OpenMode openMode, AccessMode accessMode) override
+    {
+        DEBUGV("Unsupported operation");
+        return FileImplPtr();
+    }
+
+    DirImplPtr openDir() override
+    {
+        DEBUGV("Unsupported operation");
+        return DirImplPtr();
+    }
+
+    DirImplPtr openDir(const char* name, bool create) override
+    {
+        DEBUGV("Unsupported operation");
+        return DirImplPtr();
+    }
+
+    bool remove() override
+    {
+        if (!_valid) {
+            return false;
+        }
+        return _fs->remove((const char*)_dirent.name);
+    }
+
+    bool remove(const char* name) override
+    {
+        DEBUGV("Unsupported operation");
+        return false;
+    }
+
+    const char* entryName() const override
     {
         if (!_valid) {
             return nullptr;
@@ -428,7 +472,7 @@ public:
         return (const char*) _dirent.name;
     }
 
-    size_t fileSize() override
+    size_t entrySize() const override
     {
         if (!_valid) {
             return 0;
@@ -437,8 +481,35 @@ public:
         return _dirent.size;
     }
 
-    bool next() override
+    time_t entryMtime() const override
     {
+        return 0;
+    }
+
+    bool isEntryDir() const override
+    {
+        return false;
+    }
+
+    bool isDir(const char* path) const override {
+        return false;
+    }
+
+    const char* name() const override
+    {
+        return _pattern.c_str();
+    }
+
+    time_t mtime() const override
+    {
+        return 0;
+    }
+
+    bool next(bool reset) override
+    {
+        if (reset) {
+            _dir.block = _dir.entry = 0;
+        }
         const int n = _pattern.length();
         do {
             spiffs_dirent* result = SPIFFS_readdir(&_dir, &_dirent);
