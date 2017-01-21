@@ -415,7 +415,7 @@ StringSumHelper & operator +(const StringSumHelper &lhs, double num) {
 StringSumHelper & operator + (const StringSumHelper &lhs, const __FlashStringHelper *rhs)
 {
     StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
-    if (!a.concat(rhs))	a.invalidate();
+    if (!a.concat(rhs))  a.invalidate();
     return a;
 }
 
@@ -732,6 +732,15 @@ void String::trim(void) {
     if(begin > buffer)
         memcpy(buffer, begin, len);
     buffer[len] = 0;
+}
+
+bool String::empty(void) const {
+    return len == 0;
+}
+
+void String::clear(bool free) {
+    if (free) invalidate();
+    else len = 0;
 }
 
 // /*********************************************/

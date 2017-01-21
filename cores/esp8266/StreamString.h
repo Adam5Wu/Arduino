@@ -23,9 +23,14 @@
 #ifndef STREAMSTRING_H_
 #define STREAMSTRING_H_
 
+class PrintString: public String, public Print {
+  public:
+    size_t write(const uint8_t *buffer, size_t size) override;
+    size_t write(uint8_t data) override;
+};
 
 class StreamString: public Stream, public String {
-public:
+  public:
     size_t write(const uint8_t *buffer, size_t size) override;
     size_t write(uint8_t data) override;
 

@@ -23,6 +23,22 @@
 #include <Arduino.h>
 #include "StreamString.h"
 
+size_t PrintString::write(const uint8_t *data, size_t size) {
+    if(size && data) {
+        if(reserve(length() + size + 1)) {
+            memcpy((void *) (buffer + len), (const void *) data, size);
+            len += size;
+            *(buffer + len) = 0x00; // add null for string end
+            return size;
+        }
+    }
+    return 0;
+}
+
+size_t PrintString::write(uint8_t data) {
+    return concat((char) data);
+}
+
 size_t StreamString::write(const uint8_t *data, size_t size) {
     if(size && data) {
         if(reserve(length() + size + 1)) {
