@@ -726,7 +726,12 @@ udp_bind(struct udp_pcb *pcb, ip_addr_t *ipaddr, u16_t port)
   u8_t rebind;
 
   LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_bind(ipaddr = "));
-  ip_addr_debug_print(UDP_DEBUG, ipaddr);
+  if (ip_addr_isany(ipaddr))
+		LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("<ANY>"));
+	else if (ipaddr->addr == IPADDR_BROADCAST)
+		LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("<BCAST>"));
+	else
+		ip_addr_debug_print(UDP_DEBUG, ipaddr);
   LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, (", port = %"U16_F")\n", port));
 
   rebind = 0;
