@@ -138,28 +138,29 @@ void String::invalidate(void) {
 unsigned char String::reserve(unsigned int size) {
     if(buffer && capacity >= size)
         return 1;
-    if(changeBuffer(size)) {
-        if(len == 0)
-            buffer[0] = 0;
-        return 1;
-    }
-    return 0;
+//    if(changeBuffer(size)) {
+//        if(len == 0)
+//            buffer[0] = 0;
+//        return 1;
+//    }
+//    return 0;
+    return changeBuffer(size);
 }
 
 unsigned char String::changeBuffer(unsigned int maxStrLen) {
     size_t newSize = (maxStrLen + 16) & (~0xf);
     char *newbuffer = (char *) realloc(buffer, newSize);
     if(newbuffer) {
-        size_t oldSize = capacity + 1; // include NULL.
-        if (newSize > oldSize)
-        {
-            memset(newbuffer + oldSize, 0, newSize - oldSize);
-        }
+//        size_t oldSize = capacity + 1; // include NULL.
+//        if (newSize > oldSize)
+//        {
+//            memset(newbuffer + oldSize, 0, newSize - oldSize);
+//        }
         capacity = newSize - 1;
         buffer = newbuffer;
         return 1;
     }
-    buffer = newbuffer;
+//    buffer = newbuffer;
     return 0;
 }
 
@@ -173,7 +174,8 @@ String & String::copy(const char *cstr, unsigned int length) {
         return *this;
     }
     len = length;
-    strcpy(buffer, cstr);
+    strncpy(buffer, cstr, length);
+    buffer[len] = '\0';
     return *this;
 }
 
@@ -183,28 +185,31 @@ String & String::copy(const __FlashStringHelper *pstr, unsigned int length) {
         return *this;
     }
     len = length;
-    strcpy_P(buffer, (PGM_P)pstr);
+    strncpy_P(buffer, (PGM_P)pstr, length);
+    buffer[len] = '\0';
     return *this;
 }
 
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
 void String::move(String &rhs) {
-    if(buffer) {
-        if(capacity >= rhs.len) {
-            strcpy(buffer, rhs.buffer);
-            len = rhs.len;
-            rhs.len = 0;
-            return;
-        } else {
-            free(buffer);
-        }
-    }
+//    if(buffer) {
+//        if(capacity >= rhs.len) {
+//            strcpy(buffer, rhs.buffer);
+//            len = rhs.len;
+//            rhs.len = 0;
+//            return;
+//        } else {
+//            free(buffer);
+//        }
+//    }
+    free(buffer);
     buffer = rhs.buffer;
     capacity = rhs.capacity;
     len = rhs.len;
-    rhs.buffer = NULL;
-    rhs.capacity = 0;
-    rhs.len = 0;
+    rhs.init();
+//    rhs.buffer = NULL;
+//    rhs.capacity = 0;
+//    rhs.len = 0;
 }
 #endif
 
@@ -260,14 +265,15 @@ unsigned char String::concat(const String &s) {
 }
 
 unsigned char String::concat(const char *cstr, unsigned int length) {
-    unsigned int newlen = len + length;
     if(!cstr)
         return 0;
     if(length == 0)
         return 1;
+    unsigned int newlen = len + length;
     if(!reserve(newlen))
         return 0;
-    strcpy(buffer + len, cstr);
+    strncpy(buffer + len, cstr, length);
+    buffer[newlen] = '\0';
     len = newlen;
     return 1;
 }
@@ -278,11 +284,17 @@ unsigned char String::concat(const char *cstr) {
     return concat(cstr, strlen(cstr));
 }
 
-unsigned char String::concat(char c) {
-    char buf[2];
-    buf[0] = c;
-    buf[1] = 0;
-    return concat(buf, 1);
+unsigned char String::concat(char c, size_t count) {
+    if (count == 0)
+        return 1;
+    unsigned int newlen = len + count;
+    if(!reserve(newlen))
+        return 0;
+    if (count == 1) buffer[len] = c;
+    else memset(buffer + len, c, count);
+    buffer[newlen] = '\0';
+    len = newlen;
+    return 1;
 }
 
 unsigned char String::concat(unsigned char num) {
@@ -740,7 +752,10 @@ bool String::empty(void) const {
 
 void String::clear(bool free) {
     if (free) invalidate();
-    else len = 0;
+    else if (len) {
+       len = 0;
+       buffer[len] = 0;
+    }
 }
 
 // /*********************************************/

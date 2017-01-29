@@ -101,8 +101,8 @@ class String {
         // concatenation is considered unsucessful.
         unsigned char concat(const String &str);
         unsigned char concat(const char *cstr);
-        unsigned char concat(char c);
-        unsigned char concat(unsigned char c);
+        unsigned char concat(char c, size_t count = 1);
+        unsigned char concat(unsigned char num);
         unsigned char concat(int num);
         unsigned char concat(unsigned int num);
         unsigned char concat(long num);
@@ -110,6 +110,8 @@ class String {
         unsigned char concat(float num);
         unsigned char concat(double num);
         unsigned char concat(const __FlashStringHelper * str);
+
+        unsigned char concat(const char *cstr, unsigned int length);
 
         // if there's not enough memory for the concatenated value, the string
         // will be left unchanged (but this isn't signalled in any way)
@@ -222,10 +224,8 @@ class String {
         int lastIndexOf(char ch, unsigned int fromIndex) const;
         int lastIndexOf(const String &str) const;
         int lastIndexOf(const String &str, unsigned int fromIndex) const;
-        String substring(unsigned int beginIndex) const {
-            return substring(beginIndex, len);
-        }
-        ;
+
+        String substring(unsigned int beginIndex) const { return substring(beginIndex, len); }
         String substring(unsigned int beginIndex, unsigned int endIndex) const;
 
         // modification
@@ -251,7 +251,6 @@ class String {
         void init(void);
         void invalidate(void);
         unsigned char changeBuffer(unsigned int maxStrLen);
-        unsigned char concat(const char *cstr, unsigned int length);
 
         // copy and move
         String & copy(const char *cstr, unsigned int length);
