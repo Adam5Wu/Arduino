@@ -5,6 +5,7 @@
  Copyright 2011, Paul Stoffregen, paul@pjrc.com
  Modified by Ivan Grokhotkov, 2014 - esp8266 support
  Modified by Michael C. Miller, 2015 - esp8266 progmem support
+ Modified by Zhenyu Wu <Adam_5Wu@hotmail.com> for VFATFS, 2017.01
 
  This library is free software; you can redistribute it and/or
  modify it under the terms of the GNU Lesser General Public
@@ -57,59 +58,44 @@ String::String(StringSumHelper &&rval) {
 }
 #endif
 
-String::String(char c) {
+String::String(char c, size_t count) {
     init();
-    char buf[2];
-    buf[0] = c;
-    buf[1] = 0;
-    *this = buf;
+    concat(c, count);
 }
 
 String::String(unsigned char value, unsigned char base) {
     init();
-    char buf[1 + 8 * sizeof(unsigned char)];
-    utoa(value, buf, base);
-    *this = buf;
+    concat(value, base);
 }
 
 String::String(int value, unsigned char base) {
     init();
-    char buf[2 + 8 * sizeof(int)];
-    itoa(value, buf, base);
-    *this = buf;
+    concat(value, base);
 }
 
 String::String(unsigned int value, unsigned char base) {
     init();
-    char buf[1 + 8 * sizeof(unsigned int)];
-    utoa(value, buf, base);
-    *this = buf;
+    concat(value, base);
 }
 
 String::String(long value, unsigned char base) {
     init();
-    char buf[2 + 8 * sizeof(long)];
-    ltoa(value, buf, base);
-    *this = buf;
+    concat(value, base);
 }
 
 String::String(unsigned long value, unsigned char base) {
     init();
-    char buf[1 + 8 * sizeof(unsigned long)];
-    ultoa(value, buf, base);
-    *this = buf;
+    concat(value, base);
 }
 
 String::String(float value, unsigned char decimalPlaces) {
     init();
-    char buf[33];
-    *this = dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf);
+    concat(value, decimalPlaces);
 }
 
 String::String(double value, unsigned char decimalPlaces) {
     init();
-    char buf[33];
-    *this = dtostrf(value, (decimalPlaces + 2), decimalPlaces, buf);
+    concat(value, decimalPlaces);
 }
 
 String::~String() {
@@ -138,12 +124,6 @@ void String::invalidate(void) {
 unsigned char String::reserve(unsigned int size) {
     if(buffer && capacity >= size)
         return 1;
-//    if(changeBuffer(size)) {
-//        if(len == 0)
-//            buffer[0] = 0;
-//        return 1;
-//    }
-//    return 0;
     return changeBuffer(size);
 }
 
@@ -151,16 +131,10 @@ unsigned char String::changeBuffer(unsigned int maxStrLen) {
     size_t newSize = (maxStrLen + 16) & (~0xf);
     char *newbuffer = (char *) realloc(buffer, newSize);
     if(newbuffer) {
-//        size_t oldSize = capacity + 1; // include NULL.
-//        if (newSize > oldSize)
-//        {
-//            memset(newbuffer + oldSize, 0, newSize - oldSize);
-//        }
         capacity = newSize - 1;
         buffer = newbuffer;
         return 1;
     }
-//    buffer = newbuffer;
     return 0;
 }
 
@@ -192,24 +166,11 @@ String & String::copy(const __FlashStringHelper *pstr, unsigned int length) {
 
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
 void String::move(String &rhs) {
-//    if(buffer) {
-//        if(capacity >= rhs.len) {
-//            strcpy(buffer, rhs.buffer);
-//            len = rhs.len;
-//            rhs.len = 0;
-//            return;
-//        } else {
-//            free(buffer);
-//        }
-//    }
     free(buffer);
     buffer = rhs.buffer;
     capacity = rhs.capacity;
     len = rhs.len;
     rhs.init();
-//    rhs.buffer = NULL;
-//    rhs.capacity = 0;
-//    rhs.len = 0;
 }
 #endif
 
@@ -264,20 +225,6 @@ unsigned char String::concat(const String &s) {
     return concat(s.buffer, s.len);
 }
 
-unsigned char String::concat(const char *cstr, unsigned int length) {
-    if(!cstr)
-        return 0;
-    if(length == 0)
-        return 1;
-    unsigned int newlen = len + length;
-    if(!reserve(newlen))
-        return 0;
-    strncpy(buffer + len, cstr, length);
-    buffer[newlen] = '\0';
-    len = newlen;
-    return 1;
-}
-
 unsigned char String::concat(const char *cstr) {
     if(!cstr)
         return 0;
@@ -297,46 +244,46 @@ unsigned char String::concat(char c, size_t count) {
     return 1;
 }
 
-unsigned char String::concat(unsigned char num) {
-    char buf[1 + 3 * sizeof(unsigned char)];
-    itoa(num, buf, 10);
+unsigned char String::concat(unsigned char num, unsigned char base) {
+    char buf[1 + 8 * sizeof(unsigned char)];
+    utoa(num, buf, base);
     return concat(buf, strlen(buf));
 }
 
-unsigned char String::concat(int num) {
-    char buf[2 + 3 * sizeof(int)];
-    itoa(num, buf, 10);
+unsigned char String::concat(int num, unsigned char base) {
+    char buf[2 + 8 * sizeof(int)];
+    itoa(num, buf, base);
     return concat(buf, strlen(buf));
 }
 
-unsigned char String::concat(unsigned int num) {
-    char buf[1 + 3 * sizeof(unsigned int)];
-    utoa(num, buf, 10);
+unsigned char String::concat(unsigned int num, unsigned char base) {
+    char buf[1 + 8 * sizeof(unsigned int)];
+    utoa(num, buf, base);
     return concat(buf, strlen(buf));
 }
 
-unsigned char String::concat(long num) {
-    char buf[2 + 3 * sizeof(long)];
-    ltoa(num, buf, 10);
+unsigned char String::concat(long num, unsigned char base) {
+    char buf[2 + 8 * sizeof(long)];
+    ltoa(num, buf, base);
     return concat(buf, strlen(buf));
 }
 
-unsigned char String::concat(unsigned long num) {
-    char buf[1 + 3 * sizeof(unsigned long)];
-    ultoa(num, buf, 10);
+unsigned char String::concat(unsigned long num, unsigned char base) {
+    char buf[1 + 8 * sizeof(unsigned long)];
+    ultoa(num, buf, base);
     return concat(buf, strlen(buf));
 }
 
-unsigned char String::concat(float num) {
-    char buf[20];
-    char* string = dtostrf(num, 4, 2, buf);
-    return concat(string, strlen(string));
+unsigned char String::concat(float num, unsigned char decimalPlaces) {
+    char buf[33];
+    dtostrf(num, (decimalPlaces + 2), decimalPlaces, buf);
+    return concat(buf, strlen(buf));
 }
 
-unsigned char String::concat(double num) {
-    char buf[20];
-    char* string = dtostrf(num, 4, 2, buf);
-    return concat(string, strlen(string));
+unsigned char String::concat(double num, unsigned char decimalPlaces) {
+    char buf[33];
+    dtostrf(num, (decimalPlaces + 2), decimalPlaces, buf);
+    return concat(buf, strlen(buf));
 }
 
 unsigned char String::concat(const __FlashStringHelper * str) {
@@ -346,6 +293,20 @@ unsigned char String::concat(const __FlashStringHelper * str) {
     unsigned int newlen = len + length;
     if (!reserve(newlen)) return 0;
     strcpy_P(buffer + len, (PGM_P)str);
+    len = newlen;
+    return 1;
+}
+
+unsigned char String::concat(const char *cstr, unsigned int length) {
+    if(!cstr)
+        return 0;
+    if(length == 0)
+        return 1;
+    unsigned int newlen = len + length;
+    if(!reserve(newlen))
+        return 0;
+    strncpy(buffer + len, cstr, length);
+    buffer[newlen] = '\0';
     len = newlen;
     return 1;
 }
