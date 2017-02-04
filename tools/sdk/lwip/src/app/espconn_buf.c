@@ -22,7 +22,7 @@ static const char mem_debug_file[] ICACHE_RODATA_ATTR = __FILE__;
 
 #define lwIP_ASSERT(Expression)	do{if(!(Expression)) {os_printf("%s %d\n", __func__, __LINE__);return;}}while(0)
 
-ringbuf_t ringbuf_new(size_t capacity)
+_ringbuf_t ringbuf_new(size_t capacity)
 {
 	ringbuf_t rb = (ringbuf_t)os_zalloc(sizeof(struct ringbuf_t));
 	if (rb){
@@ -43,12 +43,12 @@ size_t ringbuf_buffer_size(const struct ringbuf_t *rb)
 	return rb->size;
 }
 
-void ringbuf_reset(ringbuf_t rb)
+void ringbuf_reset(_ringbuf_t rb)
 {
 	rb ->head = rb->tail = rb->buf;
 }
 
-void ringbuf_free(ringbuf_t *rb)
+void ringbuf_free(_ringbuf_t *rb)
 {
 	lwIP_ASSERT(rb && *rb);
 	os_free((*rb)->buf);

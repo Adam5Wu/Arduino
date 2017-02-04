@@ -23,15 +23,15 @@ typedef struct ringbuf_t {
 	uint8_t *buf;
 	uint8_t *head, *tail;
 	size_t size;
-} ringbuf, *ringbuf_t;
+} ringbuf, *_ringbuf_t;
 
-ringbuf_t ringbuf_new(size_t capacity);
+_ringbuf_t ringbuf_new(size_t capacity);
 
 size_t ringbuf_buffer_size(const struct ringbuf_t *rb);
 
-void ringbuf_reset(ringbuf_t rb);
+void ringbuf_reset(_ringbuf_t rb);
 
-void ringbuf_free(ringbuf_t *rb);
+void ringbuf_free(_ringbuf_t *rb);
 
 size_t ringbuf_capacity(const struct ringbuf_t *rb);
 
