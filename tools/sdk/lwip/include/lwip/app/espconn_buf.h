@@ -47,14 +47,14 @@ const void* ringbuf_tail(const struct ringbuf_t *rb);
 
 const void* ringbuf_head(const struct ringbuf_t *rb);
 
-static uint8_t *ringbuf_nextp(ringbuf_t rb, const uint8_t *p);
+static uint8_t *ringbuf_nextp(_ringbuf_t rb, const uint8_t *p);
 
 size_t ringbuf_findchr(const struct ringbuf_t *rb, int c, size_t offset);
 
-size_t ringbuf_memset(ringbuf_t dst, int c, size_t len);
+size_t ringbuf_memset(_ringbuf_t dst, int c, size_t len);
 
-void *ringbuf_memcpy_into(ringbuf_t dst, const void *src, size_t count);
+void *ringbuf_memcpy_into(_ringbuf_t dst, const void *src, size_t count);
 
-void *ringbuf_memcpy_from(void *dst, ringbuf_t src, size_t count);
+void *ringbuf_memcpy_from(void *dst, _ringbuf_t src, size_t count);
 
 #endif /* RINGBUF_H_ */

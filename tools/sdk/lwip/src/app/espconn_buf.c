@@ -20,11 +20,11 @@ static const char mem_debug_file[] ICACHE_RODATA_ATTR = __FILE__;
 #define lwIP_unlikely(Expression) !!(Expression)
 #endif
 
-#define lwIP_ASSERT(Expression)	do{if(!(Expression)) {os_printf("%s %d\n", __func__, __LINE__);return;}}while(0)
+#define lwIP_ASSERT(Expression)	do{if(!(Expression)) {os_printf("%s %d\n", __func__, __LINE__);break;}}while(0)
 
 _ringbuf_t ringbuf_new(size_t capacity)
 {
-	ringbuf_t rb = (ringbuf_t)os_zalloc(sizeof(struct ringbuf_t));
+	_ringbuf_t rb = (_ringbuf_t)os_zalloc(sizeof(struct ringbuf_t));
 	if (rb){
 		rb->size = capacity + 1;
 		rb->buf = (uint8*)os_zalloc(rb->size);
@@ -99,7 +99,7 @@ const void* ringbuf_head(const struct ringbuf_t *rb)
 	return rb->head;
 }
 
-static uint8_t *ringbuf_nextp(ringbuf_t rb, const uint8_t *p)
+static uint8_t *ringbuf_nextp(_ringbuf_t rb, const uint8_t *p)
 {
 	lwIP_ASSERT((p >= rb->buf) && (p < ringbuf_end(rb)));
 	return rb->buf + ((++p -rb->buf) % ringbuf_buffer_size(rb));
@@ -122,7 +122,7 @@ size_t ringbuf_findchr(const struct ringbuf_t *rb, int c, size_t offset)
 		return ringbuf_findchr(rb, c, offset + n);
 }
 
-size_t ringbuf_memset(ringbuf_t dst, int c, size_t len)
+size_t ringbuf_memset(_ringbuf_t dst, int c, size_t len)
 {
 	const uint8_t *bufend = ringbuf_end(dst);
 	size_t nwritten = 0;
@@ -149,7 +149,7 @@ size_t ringbuf_memset(ringbuf_t dst, int c, size_t len)
 	return nwritten;
 }
 
-void *ringbuf_memcpy_into(ringbuf_t dst,const void *src, size_t count)
+void *ringbuf_memcpy_into(_ringbuf_t dst, const void *src, size_t count)
 {
 	const uint8_t *u8src = src;
 	const uint8_t *bufend = ringbuf_end(dst);
@@ -175,7 +175,7 @@ void *ringbuf_memcpy_into(ringbuf_t dst,const void *src, size_t count)
 	return dst->head;
 }
 
-void *ringbuf_memcpy_from(void *dst,ringbuf_t src, size_t count)
+void *ringbuf_memcpy_from(void *dst, _ringbuf_t src, size_t count)
 {
 	size_t bytes_used = ringbuf_bytes_used(src);
 
