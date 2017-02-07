@@ -116,9 +116,10 @@ inline void String::init(void) {
 }
 
 void String::invalidate(void) {
-    if(buffer)
+    if(buffer) {
         free(buffer);
-    init();
+        init();
+    }
 }
 
 unsigned char String::reserve(unsigned int size) {
