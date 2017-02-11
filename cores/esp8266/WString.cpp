@@ -397,27 +397,30 @@ StringSumHelper & operator + (const StringSumHelper &lhs, const __FlashStringHel
 // /*  Comparison                               */
 // /*********************************************/
 
-int String::compareTo(const String &s) const {
-    if(!buffer || !s.buffer) {
-        if(s.buffer && s.len > 0)
-            return 0 - *(unsigned char *) s.buffer;
-        if(buffer && len > 0)
-            return *(unsigned char *) buffer;
-        return 0;
-    }
-    return strcmp(buffer, s.buffer);
+int String::compareTo(const String &s, bool ignoreCase) const {
+    return compareTo(s.buffer, ignoreCase);
 }
 
-unsigned char String::equals(const String &s2) const {
-    return (len == s2.len && compareTo(s2) == 0);
+int String::compareTo(const char *buf, bool ignoreCase) const {
+    const char* aBuf = buffer? buffer : "";
+    const char* bBuf = buf? buf : "";
+    return ignoreCase? strcasecmp(aBuf, bBuf): strcmp(aBuf, bBuf);
 }
 
-unsigned char String::equals(const char *cstr) const {
-    if(len == 0)
-        return (cstr == NULL || *cstr == 0);
-    if(cstr == NULL)
-        return buffer[0] == 0;
-    return strcmp(buffer, cstr) == 0;
+unsigned char String::equals(const String &s2, bool ignoreCase) const {
+    return (len == s2.len && compareTo(s2, ignoreCase) == 0);
+}
+
+unsigned char String::equals(const char *cstr, bool ignoreCase) const {
+    return compareTo(cstr, ignoreCase) == 0;
+}
+
+unsigned char String::equalsIgnoreCase(const String &s2) const {
+    return equals(s2, true);
+}
+
+unsigned char String::equalsIgnoreCase(const char *cstr) const {
+    return equals(cstr, true);
 }
 
 unsigned char String::operator<(const String &rhs) const {
@@ -436,38 +439,42 @@ unsigned char String::operator>=(const String &rhs) const {
     return compareTo(rhs) >= 0;
 }
 
-unsigned char String::equalsIgnoreCase(const String &s2) const {
-    if(this == &s2)
-        return 1;
-    if(len != s2.len)
-        return 0;
-    if(len == 0)
-        return 1;
-    const char *p1 = buffer;
-    const char *p2 = s2.buffer;
-    while(*p1) {
-        if(tolower(*p1++) != tolower(*p2++))
-            return 0;
-    }
-    return 1;
+unsigned char String::startsWith(const String &s2, bool ignoreCase) const {
+    return startsWith(s2, 0, ignoreCase);
 }
 
-unsigned char String::startsWith(const String &s2) const {
-    if(len < s2.len)
-        return 0;
-    return startsWith(s2, 0);
+unsigned char String::startsWith(const String &s2, unsigned int offset, bool ignoreCase) const {
+    return startsWith(s2.buffer, s2.len, offset, ignoreCase);
 }
 
-unsigned char String::startsWith(const String &s2, unsigned int offset) const {
-    if(offset > len - s2.len || !buffer || !s2.buffer)
-        return 0;
-    return strncmp(&buffer[offset], s2.buffer, s2.len) == 0;
+unsigned char String::startsWith(const char *buf, unsigned int offset, bool ignoreCase) const {
+    return startsWith(buf, strlen(buf), offset, ignoreCase);
 }
 
-unsigned char String::endsWith(const String &s2) const {
-    if(len < s2.len || !buffer || !s2.buffer)
-        return 0;
-    return strcmp(&buffer[len - s2.len], s2.buffer) == 0;
+unsigned char String::startsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase) const {
+    if (!bLen) return 1;
+    if (offset + bLen > len) return 0;
+    const char* cBuf = buffer+offset;
+    return (ignoreCase? strncasecmp(cBuf, buf, bLen) : strncmp(cBuf, buf, bLen)) == 0;
+}
+
+unsigned char String::endsWith(const String &s2, bool ignoreCase) const {
+    return endsWith(s2, 0, ignoreCase);
+}
+
+unsigned char String::endsWith(const String &s2, unsigned int offset, bool ignoreCase) const {
+    return endsWith(s2.buffer, s2.len, offset, ignoreCase);
+}
+
+unsigned char String::endsWith(const char *buf, unsigned int offset, bool ignoreCase) const {
+    return endsWith(buf, strlen(buf), offset, ignoreCase);
+}
+
+unsigned char String::endsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase) const {
+    if (!bLen) return 1;
+    if (offset + bLen > len) return 0;
+    const char* cBuf = buffer+len-offset-bLen;
+    return (ignoreCase? strncasecmp(cBuf, buf, bLen) : strncmp(cBuf, buf, bLen)) == 0;
 }
 
 // /*********************************************/

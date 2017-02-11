@@ -23,6 +23,10 @@
 #ifndef STREAMSTRING_H_
 #define STREAMSTRING_H_
 
+#include <WString.h>
+#include <Stream.h>
+#include <Print.h>
+
 class PrintString: public String, public Print {
   public:
     size_t write(const uint8_t *buffer, size_t size) override;
