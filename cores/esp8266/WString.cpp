@@ -30,10 +30,10 @@
 /*  Constructors                             */
 /*********************************************/
 
-String::String(const char *cstr) {
+String::String(const char *cstr, size_t len) {
     init();
     if(cstr)
-        copy(cstr, strlen(cstr));
+        copy(cstr, len? len: strlen(cstr));
 }
 
 String::String(const String &value) {
