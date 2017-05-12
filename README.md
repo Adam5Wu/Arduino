@@ -106,7 +106,7 @@ If you can not find the answers above, you can also try [ESP8266 Community Forum
 
 For minor fixes of code and documentation, go ahead and submit a pull request.
 
-Check out the list of issues which are easy to fix — [easy issues for 2.2.0](https://github.com/esp8266/Arduino/issues?q=is%3Aopen+is%3Aissue+milestone%3A2.2.0+label%3A%22level%3A+easy%22). Working on them is a great way to move the project forward.
+Check out the list of issues which are easy to fix — [easy issues for 2.4.0](https://github.com/esp8266/Arduino/issues?q=is%3Aopen+is%3Aissue+milestone%3A2.4.0+label%3A%22level%3A+easy%22). Working on them is a great way to move the project forward.
 
 Larger changes (rewriting parts of existing code from scratch, adding new functions to the core, adding new libraries) should generally be discussed [in the chat](https://gitter.im/esp8266/Arduino) first.
 
@@ -127,3 +127,5 @@ ESP8266 core files are licensed under LGPL.
 [SPI Flash File System (SPIFFS)](https://github.com/pellepl/spiffs) written by Peter Andersson is used in this project. It is distributed under MIT license.
 
 [umm_malloc](https://github.com/rhempel/umm_malloc) memory management library written by Ralph Hempel is used in this project. It is distributed under MIT license.
+
+[axTLS](http://axtls.sourceforge.net/) library written by Cameron Rich, built from https://github.com/igrr/axtls-8266, is used in this project. It is distributed under [BSD license](https://github.com/igrr/axtls-8266/blob/master/LICENSE).
