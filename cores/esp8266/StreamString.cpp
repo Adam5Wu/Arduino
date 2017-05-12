@@ -64,7 +64,6 @@ int StreamString::read() {
         char c = charAt(0);
         remove(0, 1);
         return c;
-
     }
     return -1;
 }

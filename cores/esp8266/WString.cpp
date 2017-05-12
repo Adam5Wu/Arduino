@@ -407,70 +407,70 @@ int String::compareTo(const char *buf, bool ignoreCase) const {
     return ignoreCase? strcasecmp(aBuf, bBuf): strcmp(aBuf, bBuf);
 }
 
-unsigned char String::equals(const String &s2, bool ignoreCase) const {
+bool String::equals(const String &s2, bool ignoreCase) const {
     return (len == s2.len && compareTo(s2, ignoreCase) == 0);
 }
 
-unsigned char String::equals(const char *cstr, bool ignoreCase) const {
+bool String::equals(const char *cstr, bool ignoreCase) const {
     return compareTo(cstr, ignoreCase) == 0;
 }
 
-unsigned char String::equalsIgnoreCase(const String &s2) const {
+bool String::equalsIgnoreCase(const String &s2) const {
     return equals(s2, true);
 }
 
-unsigned char String::equalsIgnoreCase(const char *cstr) const {
+bool String::equalsIgnoreCase(const char *cstr) const {
     return equals(cstr, true);
 }
 
-unsigned char String::operator<(const String &rhs) const {
+bool String::operator<(const String &rhs) const {
     return compareTo(rhs) < 0;
 }
 
-unsigned char String::operator>(const String &rhs) const {
+bool String::operator>(const String &rhs) const {
     return compareTo(rhs) > 0;
 }
 
-unsigned char String::operator<=(const String &rhs) const {
+bool String::operator<=(const String &rhs) const {
     return compareTo(rhs) <= 0;
 }
 
-unsigned char String::operator>=(const String &rhs) const {
+bool String::operator>=(const String &rhs) const {
     return compareTo(rhs) >= 0;
 }
 
-unsigned char String::startsWith(const String &s2, bool ignoreCase) const {
+bool String::startsWith(const String &s2, bool ignoreCase) const {
     return startsWith(s2, 0, ignoreCase);
 }
 
-unsigned char String::startsWith(const String &s2, unsigned int offset, bool ignoreCase) const {
+bool String::startsWith(const String &s2, unsigned int offset, bool ignoreCase) const {
     return startsWith(s2.buffer, s2.len, offset, ignoreCase);
 }
 
-unsigned char String::startsWith(const char *buf, unsigned int offset, bool ignoreCase) const {
+bool String::startsWith(const char *buf, unsigned int offset, bool ignoreCase) const {
     return startsWith(buf, strlen(buf), offset, ignoreCase);
 }
 
-unsigned char String::startsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase) const {
+bool String::startsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase) const {
     if (!bLen) return 1;
     if (offset + bLen > len) return 0;
     const char* cBuf = buffer+offset;
     return (ignoreCase? strncasecmp(cBuf, buf, bLen) : strncmp(cBuf, buf, bLen)) == 0;
 }
 
-unsigned char String::endsWith(const String &s2, bool ignoreCase) const {
+bool String::endsWith(const String &s2, bool ignoreCase) const {
     return endsWith(s2, 0, ignoreCase);
 }
 
-unsigned char String::endsWith(const String &s2, unsigned int offset, bool ignoreCase) const {
+bool String::endsWith(const String &s2, unsigned int offset, bool ignoreCase) const {
     return endsWith(s2.buffer, s2.len, offset, ignoreCase);
 }
 
-unsigned char String::endsWith(const char *buf, unsigned int offset, bool ignoreCase) const {
+bool String::endsWith(const char *buf, unsigned int offset, bool ignoreCase) const {
     return endsWith(buf, strlen(buf), offset, ignoreCase);
 }
 
-unsigned char String::endsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase) const {
+bool String::endsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase) const {
     if (!bLen) return 1;
     if (offset + bLen > len) return 0;
     const char* cBuf = buffer+len-offset-bLen;

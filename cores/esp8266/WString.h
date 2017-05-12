@@ -138,29 +138,29 @@ class String {
         int compareTo(const String &s, bool ignoreCase = false) const;
         int compareTo(const char *buf, bool ignoreCase = false) const;
 
-        unsigned char equals(const String &s, bool ignoreCase = false) const;
-        unsigned char equals(const char *cstr, bool ignoreCase = false) const;
-        unsigned char equalsIgnoreCase(const String &s) const;
-        unsigned char equalsIgnoreCase(const char *cstr) const;
+        bool equals(const String &s, bool ignoreCase = false) const;
+        bool equals(const char *cstr, bool ignoreCase = false) const;
+        bool equalsIgnoreCase(const String &s) const;
+        bool equalsIgnoreCase(const char *cstr) const;
 
-        unsigned char operator ==(const String &rhs) const { return equals(rhs); }
-        unsigned char operator ==(const char *cstr) const { return equals(cstr); }
-        unsigned char operator !=(const String &rhs) const { return !equals(rhs); }
-        unsigned char operator !=(const char *cstr) const { return !equals(cstr); }
+        bool operator ==(const String &rhs) const { return equals(rhs); }
+        bool operator ==(const char *cstr) const { return equals(cstr); }
+        bool operator !=(const String &rhs) const { return !equals(rhs); }
+        bool operator !=(const char *cstr) const { return !equals(cstr); }
 
-        unsigned char operator <(const String &rhs) const;
-        unsigned char operator >(const String &rhs) const;
-        unsigned char operator <=(const String &rhs) const;
-        unsigned char operator >=(const String &rhs) const;
+        bool operator <(const String &rhs) const;
+        bool operator >(const String &rhs) const;
+        bool operator <=(const String &rhs) const;
+        bool operator >=(const String &rhs) const;
 
-        unsigned char startsWith(const String &prefix, bool ignoreCase = false) const;
-        unsigned char startsWith(const String &prefix, unsigned int offset, bool ignoreCase = false) const;
-        unsigned char startsWith(const char *buf, unsigned int offset, bool ignoreCase = false) const;
-        unsigned char startsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase = false) const;
-        unsigned char endsWith(const String &suffix, bool ignoreCase = false) const;
-        unsigned char endsWith(const String &prefix, unsigned int offset, bool ignoreCase = false) const;
-        unsigned char endsWith(const char *buf, unsigned int offset, bool ignoreCase = false) const;
-        unsigned char endsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase = false) const;
+        bool startsWith(const String &prefix, bool ignoreCase = false) const;
+        bool startsWith(const String &prefix, unsigned int offset, bool ignoreCase = false) const;
+        bool startsWith(const char *buf, unsigned int offset, bool ignoreCase = false) const;
+        bool startsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase = false) const;
+        bool endsWith(const String &suffix, bool ignoreCase = false) const;
+        bool endsWith(const String &prefix, unsigned int offset, bool ignoreCase = false) const;
+        bool endsWith(const char *buf, unsigned int offset, bool ignoreCase = false) const;
+        bool endsWith(const char *buf, unsigned int bLen, unsigned int offset, bool ignoreCase = false) const;
 
         // character acccess
         char charAt(unsigned int index) const;
