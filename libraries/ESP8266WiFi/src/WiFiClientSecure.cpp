@@ -27,6 +27,7 @@ extern "C"
 #include "osapi.h"
 #include "ets_sys.h"
 }
+#include <list>
 #include <errno.h>
 #include "debug.h"
 #include "ESP8266WiFi.h"
@@ -45,10 +46,30 @@ extern "C"
 #endif
 
 #ifdef DEBUG_SSL
-#define SSL_DEBUG_OPTS SSL_DISPLAY_STATES
+#define SSL_DEBUG_OPTS (SSL_DISPLAY_STATES | SSL_DISPLAY_CERTS)
 #else
 #define SSL_DEBUG_OPTS 0
 #endif
+
+
+typedef struct BufferItem
+{
+    BufferItem(const uint8_t* data_, size_t size_)
+    : size(size_), data(new uint8_t[size])
+    {
+        if (data.get() != nullptr) {
+            memcpy(data.get(), data_, size);
+        } else {
+            DEBUGV(":wcs alloc %d failed\r\n", size_);
+            size = 0;
+        }
+    }
+
+    size_t size;
+    std::unique_ptr<uint8_t[]> data;
+} BufferItem;
+
+typedef std::list<BufferItem> BufferList;
 
 class SSLContext
 {
@@ -72,8 +93,6 @@ public:
         if (_ssl_ctx_refcnt == 0) {
             ssl_ctx_free(_ssl_ctx);
         }
-
-        s_io_ctx = nullptr;
     }
 
     void ref()
@@ -92,9 +111,35 @@ public:
     {
         SSL_EXTENSIONS* ext = ssl_ext_new();
         ssl_ext_set_host_name(ext, hostName);
-        ssl_ext_set_max_fragment_size(ext, 4096);
-        s_io_ctx = ctx;
-        _ssl = ssl_client_new(_ssl_ctx, 0, nullptr, 0, ext);
+        if (_ssl) {
+            /* Creating a new TLS session on top of a new TCP connection.
+               ssl_free will want to send a close notify alert, but the old TCP connection
+               is already gone at this point, so reset io_ctx. */
+            io_ctx = nullptr;
+            ssl_free(_ssl);
+            _available = 0;
+            _read_ptr = nullptr;
+        }
+        io_ctx = ctx;
+        _ssl = ssl_client_new(_ssl_ctx, reinterpret_cast<int>(this), nullptr, 0, ext);
+        uint32_t t = millis();
+
+        while (millis() - t < timeout_ms && ssl_handshake_status(_ssl) != SSL_OK) {
+            uint8_t* data;
+            int rc = ssl_read(_ssl, &data);
+            if (rc < SSL_OK) {
+                ssl_display_error(rc);
+                break;
+            }
+        }
+    }
+
+    void connectServer(ClientContext *ctx) {
+        io_ctx = ctx;
+	_ssl = ssl_server_new(_ssl_ctx, reinterpret_cast<int>(this));
+        _isServer = true;
+
+	uint32_t timeout_ms = 5000;
         uint32_t t = millis();
 
         while (millis() - t < timeout_ms && ssl_handshake_status(_ssl) != SSL_OK) {
@@ -108,12 +153,13 @@ public:
 
     void stop()
     {
-        s_io_ctx = nullptr;
+        io_ctx = nullptr;
     }
 
     bool connected()
     {
-        return _ssl != nullptr && ssl_handshake_status(_ssl) == SSL_OK;
+        if (_isServer) return _ssl != nullptr;
+        else return _ssl != nullptr && ssl_handshake_status(_ssl) == SSL_OK;
     }
 
     int read(uint8_t* dst, size_t size)
@@ -129,6 +175,10 @@ public:
         _available -= will_copy;
         if (_available == 0) {
             _read_ptr = nullptr;
+            /* Send pending outgoing data, if any */
+            if (_hasWriteBuffers()) {
+                _writeBuffersSend();
+            }
         }
         return will_copy;
     }
@@ -145,8 +195,34 @@ public:
         --_available;
         if (_available == 0) {
             _read_ptr = nullptr;
+            /* Send pending outgoing data, if any */
+            if (_hasWriteBuffers()) {
+                _writeBuffersSend();
+            }
         }
         return result;
+    }
+
+    int write(const uint8_t* src, size_t size)
+    {
+        if (_isServer) {
+            return _write(src, size);
+        } else if (!_available) {
+            if (_hasWriteBuffers()) {
+                int rc = _writeBuffersSend();
+                if (rc < 0) {
+                    return rc;
+                }
+            }
+            return _write(src, size);
+        }
+        /* Some received data is still present in the axtls fragment buffer.
+           We can't call ssl_write now, as that will overwrite the contents of
+           the fragment buffer, corrupting the received data.
+           Save a copy of the outgoing data, and call ssl_write when all
+           recevied data has been consumed by the application.
+        */
+        return _writeBufferAdd(src, size);
     }
 
     int peek()
@@ -183,6 +259,12 @@ public:
         return cb;
     }
 
+    // similar to available, but doesn't return exact size
+    bool hasData()
+    {
+        return _available > 0 || (io_ctx && io_ctx->getSize() > 0);
+    }
+
     bool loadObject(int type, Stream& stream, size_t size)
     {
         std::unique_ptr<uint8_t[]> buf(new uint8_t[size]);
@@ -200,6 +282,14 @@ public:
         return loadObject(type, buf.get(), size);
     }
 
+    bool loadObject_P(int type, PGM_VOID_P data, size_t size)
+    {
+        std::unique_ptr<uint8_t[]> buf(new uint8_t[size]);
+        memcpy_P(buf.get(),data, size);
+        return loadObject(type, buf.get(), size);
+    }
+
+
     bool loadObject(int type, const uint8_t* data, size_t size)
     {
         int rc = ssl_obj_memory_load(_ssl_ctx, type, data, static_cast<int>(size), nullptr);
@@ -210,6 +300,25 @@ public:
         return true;
     }
 
+    bool verifyCert()
+    {
+        int rc = ssl_verify_cert(_ssl);
+        if (_allowSelfSignedCerts && rc == SSL_X509_ERROR(X509_VFY_ERROR_SELF_SIGNED)) {
+            DEBUGV("Allowing self-signed certificate\n");
+            return true;
+        } else if (rc != SSL_OK) {
+            DEBUGV("ssl_verify_cert returned %d\n", rc);
+            ssl_display_error(rc);
+            return false;
+        }
+        return true;
+    }
+
+    void allowSelfSignedCerts()
+    {
+        _allowSelfSignedCerts = true;
+    }
+
     operator SSL*()
     {
         return _ssl;
@@ -217,8 +326,15 @@ public:
 
     static ClientContext* getIOContext(int fd)
     {
-        (void) fd;
-        return s_io_ctx;
+        return reinterpret_cast<SSLContext*>(fd)->io_ctx;
+    }
+
+    int loadServerX509Cert(const uint8_t *cert, int len) {
+        return ssl_obj_memory_load(SSLContext::_ssl_ctx, SSL_OBJ_X509_CERT, cert, len, NULL);
+    }
+
+    int loadServerRSAKey(const uint8_t *rsakey, int len) {
+        return ssl_obj_memory_load(SSLContext::_ssl_ctx, SSL_OBJ_RSA_KEY, rsakey, len, NULL);
     }
 
 protected:
@@ -239,27 +355,81 @@ protected:
             }
             return 0;
         }
-        DEBUGV(":wcs ra %d", rc);
+        DEBUGV(":wcs ra %d\r\n", rc);
         _read_ptr = data;
         _available = rc;
         return _available;
     }
 
+    int _write(const uint8_t* src, size_t size)
+    {
+        if (!_ssl) {
+            return 0;
+        }
+
+        int rc = ssl_write(_ssl, src, size);
+        if (rc >= 0) {
+            return rc;
+        }
+        DEBUGV(":wcs write rc=%d\r\n", rc);
+        return rc;
+    }
+
+    int _writeBufferAdd(const uint8_t* data, size_t size)
+    {
+        if (!_ssl) {
+            return 0;
+        }
+
+        _writeBuffers.emplace_back(data, size);
+        if (_writeBuffers.back().data.get() == nullptr) {
+            _writeBuffers.pop_back();
+            return 0;
+        }
+        return size;
+    }
+
+    int _writeBuffersSend()
+    {
+        while (!_writeBuffers.empty()) {
+            auto& first = _writeBuffers.front();
+            int rc = _write(first.data.get(), first.size);
+            _writeBuffers.pop_front();
+            if (rc < 0) {
+                if (_hasWriteBuffers()) {
+                    DEBUGV(":wcs _writeBuffersSend dropping unsent data\r\n");
+                    _writeBuffers.clear();
+                }
+                return rc;
+            }
+        }
+        return 0;
+    }
+
+    bool _hasWriteBuffers()
+    {
+        return !_writeBuffers.empty();
+    }
+
+    bool _isServer = false;
     static SSL_CTX* _ssl_ctx;
     static int _ssl_ctx_refcnt;
     SSL* _ssl = nullptr;
     int _refcnt = 0;
     const uint8_t* _read_ptr = nullptr;
     size_t _available = 0;
-    static ClientContext* s_io_ctx;
+    BufferList _writeBuffers;
+    bool _allowSelfSignedCerts = false;
+    ClientContext* io_ctx = nullptr;
 };
 
 SSL_CTX* SSLContext::_ssl_ctx = nullptr;
 int SSLContext::_ssl_ctx_refcnt = 0;
-ClientContext* SSLContext::s_io_ctx = nullptr;
 
 WiFiClientSecure::WiFiClientSecure()
 {
+    // TLS handshake may take more than the 5 second default timeout
+    _timeout = 15000;
 }
 
 WiFiClientSecure::~WiFiClientSecure()
@@ -288,6 +458,42 @@ WiFiClientSecure& WiFiClientSecure::operator=(const WiFiClientSecure& rhs)
     return *this;
 }
 
+// Only called by the WifiServerSecure, need to get the keys/certs loaded before beginning
+WiFiClientSecure::WiFiClientSecure(ClientContext* client, bool usePMEM, const uint8_t *rsakey, int rsakeyLen, const uint8_t *cert, int certLen)
+{
+    _client = client;
+    if (_ssl) {
+        _ssl->unref();
+        _ssl = nullptr;
+    }
+
+    _ssl = new SSLContext;
+    _ssl->ref();
+
+    if (usePMEM) {
+        // When using PMEM based certs, allocate stack and copy from flash to DRAM, call SSL functions to avoid
+        // heap fragmentation that would happen w/malloc()
+        uint8_t *stackData = (uint8_t*)alloca(max(certLen, rsakeyLen));
+        if (rsakey && rsakeyLen) {
+              memcpy_P(stackData, rsakey, rsakeyLen);
+              _ssl->loadServerRSAKey(stackData, rsakeyLen);
+        }
+        if (cert && certLen) {
+            memcpy_P(stackData, cert, certLen);
+            _ssl->loadServerX509Cert(stackData, certLen);
+        }
+    } else {
+        if (rsakey && rsakeyLen) {
+            _ssl->loadServerRSAKey(rsakey, rsakeyLen);
+        }
+        if (cert && certLen) {
+            _ssl->loadServerX509Cert(cert, certLen);
+        }
+    }
+    _client->ref();
+    _ssl->connectServer(client);
+}
+
 int WiFiClientSecure::connect(IPAddress ip, uint16_t port)
 {
     if (!WiFiClient::connect(ip, port)) {
@@ -309,16 +515,18 @@ int WiFiClientSecure::connect(const char* name, uint16_t port)
     return _connectSSL(name);
 }
 
+int WiFiClientSecure::connect(const String host, uint16_t port)
+{
+    return connect(host.c_str(), port);
+}
+
 int WiFiClientSecure::_connectSSL(const char* hostName)
 {
-    if (_ssl) {
-        _ssl->unref();
-        _ssl = nullptr;
+    if (!_ssl) {
+        _ssl = new SSLContext;
+        _ssl->ref();
     }
-
-    _ssl = new SSLContext;
-    _ssl->ref();
-    _ssl->connect(_client, hostName, 5000);
+    _ssl->connect(_client, hostName, _timeout);
 
     auto status = ssl_handshake_status(*_ssl);
     if (status != SSL_OK) {
@@ -336,7 +544,7 @@ size_t WiFiClientSecure::write(const uint8_t *buf, size_t size)
         return 0;
     }
 
-    int rc = ssl_write(*_ssl, buf, size);
+    int rc = _ssl->write(buf, size);
     if (rc >= 0) {
         return rc;
     }
@@ -347,6 +555,14 @@ size_t WiFiClientSecure::write(const uint8_t *buf, size_t size)
     }
 
     return 0;
+}
+
+size_t WiFiClientSecure::write_P(PGM_P buf, size_t size)
+{
+    // Copy to RAM and call normal send. alloca() auto-frees on return
+    uint8_t *copy = (uint8_t*)alloca(size);
+    memcpy_P(copy, buf, size);
+    return write(copy, size);
 }
 
 int WiFiClientSecure::read(uint8_t *buf, size_t size)
@@ -423,7 +639,7 @@ err     x       N           N
 uint8_t WiFiClientSecure::connected()
 {
     if (_ssl) {
-        if (_ssl->available()) {
+        if (_ssl->hasData()) {
             return true;
         }
         if (_client && _client->state() == ESTABLISHED && _ssl->connected()) {
@@ -437,6 +653,8 @@ void WiFiClientSecure::stop()
 {
     if (_ssl) {
         _ssl->stop();
+        _ssl->unref();
+        _ssl = nullptr;
     }
     WiFiClient::stop();
 }
@@ -521,14 +739,18 @@ bool WiFiClientSecure::_verifyDN(const char* domain_name)
     const char* san = NULL;
     int i = 0;
     while ((san = ssl_get_cert_subject_alt_dnsname(*_ssl, i)) != NULL) {
-        if (matchName(String(san), domain_name_str)) {
+        String san_str(san);
+        san_str.toLowerCase();
+        if (matchName(san_str, domain_name_str)) {
             return true;
         }
         DEBUGV("SAN %d: '%s', no match\r\n", i, san);
         ++i;
     }
     const char* common_name = ssl_get_cert_dn(*_ssl, SSL_X509_CERT_COMMON_NAME);
-    if (common_name && matchName(String(common_name), domain_name_str)) {
+    String common_name_str(common_name);
+    common_name_str.toLowerCase();
+    if (common_name && matchName(common_name_str, domain_name_str)) {
         return true;
     }
     DEBUGV("CN: '%s', no match\r\n", (common_name)?common_name:"(null)");
@@ -541,61 +763,78 @@ bool WiFiClientSecure::verifyCertChain(const char* domain_name)
     if (!_ssl) {
         return false;
     }
-    int rc = ssl_verify_cert(*_ssl);
-    if (rc != SSL_OK) {
-        DEBUGV("ssl_verify_cert returned %d\n", rc);
+    if (!_ssl->verifyCert()) {
         return false;
     }
-
     return _verifyDN(domain_name);
+}
+
+void WiFiClientSecure::_initSSLContext()
+{
+    if (!_ssl) {
+        _ssl = new SSLContext;
+        _ssl->ref();
+    }
 }
 
 bool WiFiClientSecure::setCACert(const uint8_t* pk, size_t size)
 {
-    if (!_ssl) {
-        return false;
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_X509_CACERT, pk, size);
 }
 
 bool WiFiClientSecure::setCertificate(const uint8_t* pk, size_t size)
 {
-    if (!_ssl) {
-        return false;
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_X509_CERT, pk, size);
 }
 
 bool WiFiClientSecure::setPrivateKey(const uint8_t* pk, size_t size)
 {
-    if (!_ssl) {
-        return false;
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_RSA_KEY, pk, size);
+}
+
+bool WiFiClientSecure::setCACert_P(PGM_VOID_P pk, size_t size)
+{
+    _initSSLContext();
+    return _ssl->loadObject_P(SSL_OBJ_X509_CACERT, pk, size);
+}
+
+bool WiFiClientSecure::setCertificate_P(PGM_VOID_P pk, size_t size)
+{
+    _initSSLContext();
+    return _ssl->loadObject_P(SSL_OBJ_X509_CERT, pk, size);
+}
+
+bool WiFiClientSecure::setPrivateKey_P(PGM_VOID_P pk, size_t size)
+{
+    _initSSLContext();
+    return _ssl->loadObject_P(SSL_OBJ_RSA_KEY, pk, size);
 }
 
 bool WiFiClientSecure::loadCACert(Stream& stream, size_t size)
 {
-    if (!_ssl) {
-        return false;
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_X509_CACERT, stream, size);
 }
 
 bool WiFiClientSecure::loadCertificate(Stream& stream, size_t size)
 {
-    if (!_ssl) {
-        return false;
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_X509_CERT, stream, size);
 }
 
 bool WiFiClientSecure::loadPrivateKey(Stream& stream, size_t size)
 {
-    if (!_ssl) {
-        return false;
-    }
+    _initSSLContext();
     return _ssl->loadObject(SSL_OBJ_RSA_KEY, stream, size);
+}
+
+void WiFiClientSecure::allowSelfSignedCerts()
+{
+    _initSSLContext();
+    _ssl->allowSelfSignedCerts();
 }
 
 extern "C" int __ax_port_read(int fd, uint8_t* buffer, size_t count)
@@ -640,53 +879,6 @@ extern "C" int __ax_get_file(const char *filename, uint8_t **buf)
     return 0;
 }
 extern "C" void ax_get_file() __attribute__ ((weak, alias("__ax_get_file")));
-
-
-#ifdef DEBUG_TLS_MEM
-#define DEBUG_TLS_MEM_PRINT(...) DEBUGV(__VA_ARGS__)
-#else
-#define DEBUG_TLS_MEM_PRINT(...)
-#endif
-
-extern "C" void* ax_port_malloc(size_t size, const char* file, int line)
-{
-    (void) file;
-    (void) line;
-    void* result = malloc(size);
-    if (result == nullptr) {
-        DEBUG_TLS_MEM_PRINT("%s:%d malloc %d failed, left %d\r\n", file, line, size, ESP.getFreeHeap());
-    }
-    if (size >= 1024) {
-        DEBUG_TLS_MEM_PRINT("%s:%d malloc %d, left %d\r\n", file, line, size, ESP.getFreeHeap());
-    }
-    return result;
-}
-
-extern "C" void* ax_port_calloc(size_t size, size_t count, const char* file, int line)
-{
-    void* result = ax_port_malloc(size * count, file, line);
-    memset(result, 0, size * count);
-    return result;
-}
-
-extern "C" void* ax_port_realloc(void* ptr, size_t size, const char* file, int line)
-{
-    (void) file;
-    (void) line;
-    void* result = realloc(ptr, size);
-    if (result == nullptr) {
-        DEBUG_TLS_MEM_PRINT("%s:%d realloc %d failed, left %d\r\n", file, line, size, ESP.getFreeHeap());
-    }
-    if (size >= 1024) {
-        DEBUG_TLS_MEM_PRINT("%s:%d realloc %d, left %d\r\n", file, line, size, ESP.getFreeHeap());
-    }
-    return result;
-}
-
-extern "C" void ax_port_free(void* ptr)
-{
-    free(ptr);
-}
 
 extern "C" void __ax_wdt_feed()
 {
