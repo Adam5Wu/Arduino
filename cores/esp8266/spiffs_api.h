@@ -472,6 +472,7 @@ public:
 
     bool remove(const char* name) override
     {
+        (void)name;
         DEBUGV("Unsupported operation");
         return false;
     }
@@ -505,6 +506,7 @@ public:
     }
 
     bool isDir(const char* path) const override {
+        (void)path;
         return false;
     }
 
