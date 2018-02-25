@@ -42,8 +42,8 @@ static std::set<String> listDir (const char* path)
     std::set<String> result;
     Dir dir = SPIFFS.openDir(path);
     while (dir.next()) {
-        REQUIRE(result.find(dir.fileName()) == std::end(result));
-        result.insert(dir.fileName());
+        REQUIRE(result.find(dir.entryName()) == std::end(result));
+        result.insert(dir.entryName());
     }
     return result;
 }

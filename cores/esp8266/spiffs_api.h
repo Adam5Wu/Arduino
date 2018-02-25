@@ -60,9 +60,11 @@ public:
 
     bool exists(const char* path) override;
     bool isDir(const char* path) override {
+        (void)path;
         return false;
     }
     time_t mtime(const char* path) override {
+        (void)path;
         return 0;
     }
 
@@ -254,7 +256,7 @@ protected:
         (void) report;
         (void) arg1;
         (void) arg2;
-        
+
         // TODO: spiffs doesn't pass any context pointer along with _check_cb,
         // so we can't do anything useful here other than perhaps
         // feeding the watchdog
@@ -439,6 +441,9 @@ public:
 
     FileImplPtr openFile(const char* name, OpenMode openMode, AccessMode accessMode) override
     {
+        (void)name;
+        (void)openMode;
+        (void)accessMode;
         DEBUGV("Unsupported operation");
         return FileImplPtr();
     }
@@ -451,6 +456,8 @@ public:
 
     DirImplPtr openDir(const char* name, bool create) override
     {
+        (void)name;
+        (void)create;
         DEBUGV("Unsupported operation");
         return DirImplPtr();
     }
