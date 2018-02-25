@@ -126,8 +126,8 @@ function run_host_tests()
 
 function build_package()
 {
-    export PKG_URL=https://github.com/esp8266/Arduino/releases/download/$TRAVIS_TAG/esp8266-$TRAVIS_TAG.zip
-    export DOC_URL=https://arduino-esp8266.readthedocs.io/en/$TRAVIS_TAG/
+    export PKG_URL=https://github.com/Adam5Wu/Arduino-esp8266/releases/download/$TRAVIS_TAG/esp8266-$TRAVIS_TAG.zip
+    export DOC_URL=https://adam5wu-arduino-esp8266.readthedocs.io/en/$TRAVIS_TAG/
     ./build_boards_manager_package.sh
 }
 
