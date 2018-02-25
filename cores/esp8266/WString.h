@@ -143,6 +143,8 @@ class String {
         bool equalsIgnoreCase(const String &s) const;
         bool equalsIgnoreCase(const char *cstr) const;
 
+        bool equalsConstantTime(const String &s) const;
+
         bool operator ==(const String &rhs) const { return equals(rhs); }
         bool operator ==(const char *cstr) const { return equals(cstr); }
         bool operator !=(const String &rhs) const { return !equals(rhs); }
