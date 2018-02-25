@@ -124,7 +124,7 @@ cat $srcdir/package/package_esp8266com_index.template.json | \
     jq "$jq_arg" > package_esp8266com_index.json
 
 # Get previous release name
-curl --silent https://api.github.com/repos/esp8266/Arduino/releases > releases.json
+curl --silent https://api.github.com/repos/Adam5Wu/Arduino-esp8266/releases > releases.json
 # Previous final release (prerelase == false)
 prev_release=$(jq -r '. | map(select(.draft == false and .prerelease == false)) | sort_by(.created_at | - fromdateiso8601) | .[0].tag_name' releases.json)
 # Previous release (possibly a pre-release)
@@ -142,7 +142,7 @@ base_ver=$prev_any_release
 # Download previous release
 echo "Downloading base package: $base_ver"
 old_json=package_esp8266com_index_stable.json
-curl -L -o $old_json "https://github.com/esp8266/Arduino/releases/download/${base_ver}/package_esp8266com_index.json"
+curl -L -o $old_json "https://github.com/Adam5Wu/Arduino-esp8266/releases/download/${base_ver}/package_esp8266com_index.json"
 new_json=package_esp8266com_index.json
 
 set +e
