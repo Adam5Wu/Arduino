@@ -27,6 +27,8 @@
 #include <Stream.h>
 #include <Print.h>
 
+#include <utility>
+
 class PrintString: public String, public Print {
   public:
     size_t write(const uint8_t *buffer, size_t size) override;
@@ -35,6 +37,12 @@ class PrintString: public String, public Print {
 
 class StreamString: public Stream, public String {
   public:
+    StreamString(void) {}
+    StreamString(const __FlashStringHelper *str) : String(str) {}
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
+    StreamString(String &&rval) : String(std::move(rval)) {}
+#endif
+
     size_t write(const uint8_t *buffer, size_t size) override;
     size_t write(uint8_t data) override;
 

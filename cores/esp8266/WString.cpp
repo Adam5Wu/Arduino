@@ -318,14 +318,14 @@ unsigned char String::concat(const char *cstr, unsigned int length) {
 
 StringSumHelper & operator +(const StringSumHelper &lhs, const String &rhs) {
     StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
-    if(!a.concat(rhs.buffer, rhs.len))
+    if(!a.concat(rhs.buffer, rhs.len) && rhs.begin())
         a.invalidate();
     return a;
 }
 
 StringSumHelper & operator +(const StringSumHelper &lhs, const char *cstr) {
     StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
-    if(!cstr || !a.concat(cstr, strlen(cstr)))
+    if(!a.concat(cstr, strlen(cstr)) && cstr)
         a.invalidate();
     return a;
 }
@@ -386,8 +386,7 @@ StringSumHelper & operator +(const StringSumHelper &lhs, double num) {
     return a;
 }
 
-StringSumHelper & operator + (const StringSumHelper &lhs, const __FlashStringHelper *rhs)
-{
+StringSumHelper & operator + (const StringSumHelper &lhs, const __FlashStringHelper *rhs) {
     StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
     if (!a.concat(rhs))  a.invalidate();
     return a;
