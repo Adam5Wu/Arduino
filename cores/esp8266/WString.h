@@ -70,6 +70,8 @@ class String {
         explicit String(double, unsigned char decimalPlaces = 2);
         ~String(void);
 
+        static const String EMPTY;
+
         // memory management
         // return true on success, false on failure (in which case, the string
         // is left unchanged).  reserve(0), if successful, will validate an
@@ -134,7 +136,6 @@ class String {
         friend StringSumHelper & operator +(const StringSumHelper &lhs, const __FlashStringHelper *rhs);
 
         // comparison (only works w/ Strings and "strings")
-        operator StringIfHelperType() const { return buffer ? &String::StringIfHelper : 0; }
         int compareTo(const String &s, bool ignoreCase = false) const;
         int compareTo(const char *buf, bool ignoreCase = false) const;
 
@@ -206,6 +207,9 @@ class String {
 
         bool empty(void) const;
         void clear(bool free = false);
+
+        operator StringIfHelperType() const { return empty() ? 0 : &String::StringIfHelper; }
+
     protected:
         char *buffer;           // the actual char array
         unsigned int capacity;  // the array length minus one (for the '\0')

@@ -26,6 +26,8 @@
 #include "WString.h"
 #include "stdlib_noniso.h"
 
+const String String::EMPTY;
+
 /*********************************************/
 /*  Constructors                             */
 /*********************************************/
