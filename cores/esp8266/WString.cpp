@@ -26,7 +26,7 @@
 #include "WString.h"
 #include "stdlib_noniso.h"
 
-const String String::EMPTY;
+const String String::EMPTY("");
 
 /*********************************************/
 /*  Constructors                             */
@@ -301,10 +301,10 @@ unsigned char String::concat(const __FlashStringHelper * str) {
 }
 
 unsigned char String::concat(const char *cstr, unsigned int length) {
-    if(!cstr)
-        return 0;
     if(length == 0)
         return 1;
+    if(!cstr)
+        return 0;
     unsigned int newlen = len + length;
     if(!reserve(newlen))
         return 0;
@@ -403,8 +403,8 @@ int String::compareTo(const String &s, bool ignoreCase) const {
 }
 
 int String::compareTo(const char *buf, bool ignoreCase) const {
-    const char* aBuf = buffer? buffer : "";
-    const char* bBuf = buf? buf : "";
+    const char* aBuf = buffer? buffer : EMPTY.buffer;
+    const char* bBuf = buf? buf : EMPTY.buffer;
     return ignoreCase? strcasecmp(aBuf, bBuf): strcmp(aBuf, bBuf);
 }
 
@@ -571,6 +571,8 @@ int String::indexOf(const String &s2) const {
 int String::indexOf(const String &s2, unsigned int fromIndex) const {
     if(fromIndex >= len)
         return -1;
+    if(!s2)
+        return fromIndex;
     const char *found = strstr(buffer + fromIndex, s2.buffer);
     if(found == NULL)
         return -1;

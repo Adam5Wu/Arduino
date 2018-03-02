@@ -74,8 +74,7 @@ class String {
 
         // memory management
         // return true on success, false on failure (in which case, the string
-        // is left unchanged).  reserve(0), if successful, will validate an
-        // invalid string (i.e., "if (s)" will be true afterwards)
+        // is left unchanged).
         unsigned char reserve(unsigned int size);
         inline unsigned int length(void) const { return buffer? len: 0; }
 
@@ -173,11 +172,11 @@ class String {
         void getBytes(unsigned char *buf, unsigned int bufsize, unsigned int index = 0) const;
         void toCharArray(char *buf, unsigned int bufsize, unsigned int index = 0) const
         { getBytes((unsigned char *) buf, bufsize, index); }
-        const char* c_str() const { return buffer; }
-        char* begin() { return buffer; }
-        char* end() { return buffer + length(); }
+        const char* c_str() const { return buffer? buffer : EMPTY.begin(); }
+        char* begin() { return &(*this)[0]; }
+        char* end() { return begin() + length(); }
         const char* begin() const { return c_str(); }
-        const char* end() const { return c_str() + length(); }
+        const char* end() const { return begin() + length(); }
 
         // search
         int indexOf(char ch) const;
