@@ -65,7 +65,7 @@ public:
     , _path(path)
     , _cache_header(cache_header)
     {
-        _isFile = fs.exists(path);
+        _isFile = !fs.isDir(path);
         DEBUGV("StaticRequestHandler: path=%s uri=%s isFile=%d, cache_header=%s\r\n", path, uri, _isFile, cache_header);
         _baseUriLength = _uri.length();
     }
