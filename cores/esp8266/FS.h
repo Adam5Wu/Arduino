@@ -92,11 +92,13 @@ public:
 	Dir(DirImplPtr dir_impl = DirImplPtr()): _dir_impl(dir_impl) { }
 
 	// Arduino legacy API compatibility
-	File open(const char *name, const char *mode)
-	{ return openFile(name, mode); }
-	File open(String const &name, const char *mode)
-	{ return openFile(name.c_str(), mode); }
-
+	File openFile(const char *mode)
+	{ return openEntryFile(mode); }
+	String fileName()
+	{ return entryName(); }
+	String fileSize()
+	{ return entrySize(); }
+	
 	File openFile(const char *name, const char *mode);
 	File openFile(String const &name, const char *mode)
 	{ return openFile(name.c_str(), mode); }
