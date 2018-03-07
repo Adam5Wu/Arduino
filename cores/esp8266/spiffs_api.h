@@ -167,18 +167,21 @@ public:
 
     bool isDir(const char* path) const override
     {
+        (void)path;
         // Not implemented
         return false;
     }
 
     size_t size(const char* path) const override
     {
+        (void)path;
         // Not implemented
         return 0;
     }
 
     time_t mtime(const char* path) const override
     {
+        (void)path;
         // Not implemented
         return 0;
     }
@@ -463,6 +466,9 @@ public:
         if (!_valid) {
             return FileImplPtr();
         }
+        (void)name;
+        (void)openMode;
+        (void)accessMode;
         // Not implemented
         return FileImplPtr();
     }
@@ -472,6 +478,8 @@ public:
         if (!_valid) {
             return DirImplPtr();
         }
+        (void)name;
+        (void)create;
         // Not implemented
         return DirImplPtr();
     }
@@ -501,11 +509,12 @@ public:
         return DirImplPtr();
     }
 
-    bool exists(const char* path) const override
+    bool exists(const char* name) const override
     {
         if (!_valid) {
             return false;
         }
+        (void)name;
         // Not implemented
         return false;
     }
@@ -515,6 +524,7 @@ public:
         if (!_valid) {
             return false;
         }
+        (void)name;
         // Not implemented
         return false;
     }
@@ -524,6 +534,7 @@ public:
         if (!_valid) {
             return false;
         }
+        (void)name;
         // Not implemented
         return 0;
     }
@@ -533,6 +544,7 @@ public:
         if (!_valid) {
             return false;
         }
+        (void)name;
         // Not implemented
         return 0;
     }
@@ -542,15 +554,18 @@ public:
         if (!_valid) {
             return false;
         }
+        (void)name;
         // Not implemented
         return false;
     }
 
-    bool rename(const char *pathFrom, const char *pathTo) override
+    bool rename(const char *nameFrom, const char *nameTo) override
     {
         if (!_valid) {
             return false;
         }
+        (void)nameFrom;
+        (void)nameTo;
         // Not implemented
         return false;
     }
@@ -614,12 +629,12 @@ public:
         return false;
     }
 
-    bool renameEntry(const char *pathTo) override
+    bool renameEntry(const char *nameTo) override
     {
         if (!_valid) {
             return false;
         }
-
+        (void)nameTo;
         // Not implemented
         return false;
     }
