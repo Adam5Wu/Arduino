@@ -96,9 +96,9 @@ public:
 	{ return openEntryFile(mode); }
 	String fileName()
 	{ return entryName(); }
-	String fileSize()
+	size_t fileSize()
 	{ return entrySize(); }
-	
+
 	File openFile(const char *name, const char *mode);
 	File openFile(String const &name, const char *mode)
 	{ return openFile(name.c_str(), mode); }
