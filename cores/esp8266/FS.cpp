@@ -23,383 +23,289 @@
 
 using namespace fs;
 
-static bool sflags(const char* mode, OpenMode& om, AccessMode& am);
+static bool sflags(const char *mode, OpenMode& om, AccessMode& am);
 
-size_t File::write(uint8_t c) {
-    if (!_p)
-        return 0;
-
-    return _p->write(&c, 1);
-}
+// File
 
 size_t File::write(const uint8_t *buf, size_t size) {
-    if (!_p)
-        return 0;
-
-    return _p->write(buf, size);
-}
-
-int File::available() {
-    if (!_p)
-        return false;
-
-    return _p->size() - _p->position();
-}
-
-int File::read() {
-    if (!_p)
-        return -1;
-
-    uint8_t result;
-    if (_p->read(&result, 1) != 1) {
-        return -1;
-    }
-
-    return result;
+	if (!_file_impl) return 0;
+	return _file_impl->write(buf, size);
 }
 
 size_t File::read(uint8_t* buf, size_t size) {
-    if (!_p)
-        return -1;
+	if (!_file_impl) return -1;
+	return _file_impl->read(buf, size);
+}
 
-    return _p->read(buf, size);
+int File::available() {
+	if (!_file_impl) return false;
+	return _file_impl->size() - _file_impl->position();
+}
+
+int File::read() {
+	uint8_t result;
+	if (read(&result, 1) != 1) {
+		return -1;
+	}
+	return result;
 }
 
 int File::peek() {
-    if (!_p)
-        return -1;
-
-    size_t curPos = _p->position();
-    int result = read();
-    seek(curPos, SeekSet);
-    return result;
+	uint8_t result;
+	if (read(&result, 1) != 1) {
+		return -1;
+	}
+	seek(-1, SeekCur);
+	return result;
 }
 
 void File::flush() {
-    if (!_p)
-        return;
-
-    _p->flush();
+	if (!_file_impl) return;
+	_file_impl->flush();
 }
 
-bool File::seek(uint32_t pos, SeekMode mode) {
-    if (!_p)
-        return false;
-
-    return _p->seek(pos, mode);
-}
-
-size_t File::position() const {
-    if (!_p)
-        return 0;
-
-    return _p->position();
+bool File::seek(int32_t pos, SeekMode mode) {
+	if (!_file_impl) return false;
+	return _file_impl->seek(pos, mode);
 }
 
 size_t File::size() const {
-    if (!_p)
-        return 0;
-
-    return _p->size();
-}
-
-void File::close() {
-    if (_p) {
-        _p->close();
-        _p = nullptr;
-    }
-}
-
-File::operator bool() const {
-    return !!_p;
-}
-
-const char* File::name() const {
-    if (!_p)
-        return nullptr;
-
-    return _p->name();
+	if (!_file_impl) return 0;
+	return _file_impl->size();
 }
 
 time_t File::mtime() const {
-    if (!_p) {
-        time_t ret{0};
-        return ret;
-    }
-
-    return _p->mtime();
+	if (!_file_impl) {
+		time_t ret{0};
+		return ret;
+	}
+	return _file_impl->mtime();
 }
 
-File Dir::openFile(const char* mode) {
-    if (!_impl) {
-        return File();
-    }
-
-    OpenMode om;
-    AccessMode am;
-    if (!sflags(mode, om, am)) {
-        DEBUGV("Dir::openFile: invalid mode `%s`\r\n", mode);
-        return File();
-    }
-
-    return File(_impl->openFile(om, am));
+size_t File::position() const {
+	if (!_file_impl) return 0;
+	return _file_impl->position();
 }
 
-Dir Dir::openDir() {
-    if (!_impl) {
-        return Dir();
-    }
-
-    return Dir(_impl->openDir());
+const char *File::name() const {
+	if (!_file_impl) return nullptr;
+	return _file_impl->name();
 }
 
-File Dir::openFile(const char* name, const char* mode) {
-    if (!_impl) {
-        return File();
-    }
-
-    OpenMode om;
-    AccessMode am;
-    if (!sflags(mode, om, am)) {
-        DEBUGV("Dir::openFile: invalid mode `%s`\r\n", mode);
-        return File();
-    }
-
-    return File(_impl->openFile(name, om, am));
+File::operator bool() const {
+	return !!_file_impl;
 }
 
-Dir Dir::openDir(const char* name, bool create) {
-    if (!_impl) {
-        return Dir();
-    }
-
-    return Dir(_impl->openDir(name, create));
+void File::close() {
+	if (_file_impl) {
+		_file_impl->close();
+		_file_impl = nullptr;
+	}
 }
 
-bool Dir::remove() {
-  if (!_impl) {
-    return false;
-  }
-
-  return _impl->remove();
+bool File::remove() {
+	if (!_file_impl) return false;
+	auto __file_impl = std::move(_file_impl);
+	//_file_impl = nullptr;
+	return __file_impl->remove();
 }
 
-bool Dir::remove(const char* name) {
-  if (!_impl) {
-    return false;
-  }
-
-  return _impl->remove(name);
+bool File::rename(const char *pathTo) {
+	if (!_file_impl) return false;
+	auto __file_impl = std::move(_file_impl);
+	//_file_impl = nullptr;
+	return __file_impl->rename(pathTo);
 }
 
-String Dir::entryName() const {
-    if (!_impl) {
-        return String();
-    }
+// Dir
 
-    return _impl->entryName();
+File Dir::openFile(const char *name, const char *mode) {
+	if (!_dir_impl) return File();
+
+	OpenMode om;
+	AccessMode am;
+	if (!sflags(mode, om, am)) {
+		DEBUGV("Dir::openFile: invalid mode `%s`\n", mode);
+		return File();
+	}
+
+	return File(_dir_impl->openFile(name, om, am));
 }
 
-size_t Dir::entrySize() const {
-    if (!_impl) {
-        return 0;
-    }
-
-    return _impl->entrySize();
+Dir Dir::openDir(const char *name, bool create) {
+	if (!_dir_impl) return Dir();
+	return Dir(_dir_impl->openDir(name, create));
 }
 
-time_t Dir::entryMtime() const {
-    if (!_impl) {
-        return 0;
-    }
-
-    return _impl->entryMtime();
+bool Dir::exists(const char *name) const {
+	if (!_dir_impl) return false;
+	return _dir_impl->exists(name);
 }
 
-bool Dir::isEntryDir() const {
-    if (!_impl) {
-        return false;
-    }
-
-    return _impl->isEntryDir();
+bool Dir::isDir(const char *name) const {
+	if (!_dir_impl) return false;
+	return _dir_impl->isDir(name);
 }
 
-bool Dir::isDir(const char* name) const {
-    if (!_impl) {
-        return false;
-    }
-
-    return _impl->isDir(name);
+size_t Dir::size(const char *name) const {
+	if (!_dir_impl) return 0;
+	return _dir_impl->size(name);
 }
 
-const char* Dir::name() const {
-    if (!_impl) {
-        return NULL;
-    }
-
-    return _impl->name();
+time_t Dir::mtime(const char *name) const {
+	if (!_dir_impl) return 0;
+	return _dir_impl->mtime(name);
 }
 
-time_t Dir::mtime() const {
-    if (!_impl) {
-        return 0;
-    }
+bool Dir::remove(const char *name) {
+	if (!_dir_impl) return false;
+	return _dir_impl->remove(name);
+}
 
-    return _impl->mtime();
+bool Dir::rename(const char *nameFrom, const char *nameTo) {
+	if (!_dir_impl) return false;
+	return _dir_impl->rename(nameFrom, nameTo);
 }
 
 bool Dir::next(bool reset) {
-    if (!_impl) {
-        return false;
-    }
+	if (!_dir_impl) return false;
+	return _dir_impl->next(reset);
+}
 
-    return _impl->next(reset);
+const char *Dir::entryName() const {
+	if (!_dir_impl) return nullptr;
+	return _dir_impl->entryName();
+}
+
+size_t Dir::entrySize() const {
+	if (!_dir_impl) return 0;
+	return _dir_impl->entrySize();
+}
+
+time_t Dir::entryMtime() const {
+	if (!_dir_impl) return 0;
+	return _dir_impl->entryMtime();
+}
+
+bool Dir::isEntryDir() const {
+	if (!_dir_impl) return false;
+	return _dir_impl->isEntryDir();
+}
+
+time_t Dir::mtime() const {
+	if (!_dir_impl) return 0;
+	return _dir_impl->mtime();
+}
+
+const char *Dir::name() const {
+	if (!_dir_impl) return nullptr;
+	return _dir_impl->name();
 }
 
 Dir::operator bool() const {
-    return !!_impl;
+	return !!_dir_impl;
 }
 
+// FS
+
 bool FS::begin() {
-    if (!_impl) {
-        return false;
-    }
-    return _impl->begin();
+	if (!_fs_impl) return false;
+	return _fs_impl->begin();
 }
 
 void FS::end() {
-    if (_impl) {
-        _impl->end();
-    }
+	if (_fs_impl) {
+		_fs_impl->end();
+	}
 }
 
 bool FS::format() {
-    if (!_impl) {
-        return false;
-    }
-    return _impl->format();
+	if (!_fs_impl) return false;
+	return _fs_impl->format();
 }
 
-bool FS::info(FSInfo& info){
-    if (!_impl) {
-        return false;
-    }
-    return _impl->info(info);
+bool FS::info(FSInfo& info) const {
+	if (!_fs_impl) return false;
+	return _fs_impl->info(info);
 }
 
-File FS::open(const String& path, const char* mode) {
-    return open(path.c_str(), mode);
+File FS::openFile(const char *path, const char *mode) {
+	if (!_fs_impl) return File();
+
+	OpenMode om;
+	AccessMode am;
+	if (!sflags(mode, om, am)) {
+		DEBUGV("FS::open: invalid mode `%s`\n", mode);
+		return File();
+	}
+
+	return File(_fs_impl->openFile(path, om, am));
 }
 
-File FS::open(const char* path, const char* mode) {
-    if (!_impl) {
-        return File();
-    }
-
-    OpenMode om;
-    AccessMode am;
-    if (!sflags(mode, om, am)) {
-        DEBUGV("FS::open: invalid mode `%s`\r\n", mode);
-        return File();
-    }
-
-    return File(_impl->open(path, om, am));
+Dir FS::openDir(const char *path, bool create) {
+	if (!_fs_impl) return Dir();
+	return Dir(_fs_impl->openDir(path, create));
 }
 
-bool FS::exists(const char* path) {
-    if (!_impl) {
-        return false;
-    }
-    return _impl->exists(path);
+bool FS::exists(const char *path) const {
+	if (!_fs_impl) return false;
+	return _fs_impl->exists(path);
 }
 
-bool FS::exists(const String& path) {
-    return exists(path.c_str());
+bool FS::isDir(const char *path) const {
+	if (!_fs_impl) return false;
+	return _fs_impl->isDir(path);
 }
 
-bool FS::isDir(const char* path) {
-    if (!_impl) {
-        return false;
-    }
-    return _impl->isDir(path);
+size_t FS::size(const char *path) const {
+	if (!_fs_impl) return false;
+	return _fs_impl->mtime(path);
 }
 
-bool FS::isDir(const String& path) {
-    return exists(path.c_str());
+time_t FS::mtime(const char *path) const {
+	if (!_fs_impl) return false;
+	return _fs_impl->mtime(path);
 }
 
-time_t FS::mtime(const char* path) {
-    if (!_impl) {
-        return false;
-    }
-    return _impl->mtime(path);
+bool FS::remove(const char *path) {
+	if (!_fs_impl) return false;
+	return _fs_impl->remove(path);
 }
 
-time_t FS::mtime(const String& path) {
-    return mtime(path.c_str());
+bool FS::rename(const char *pathFrom, const char *pathTo) {
+	if (!_fs_impl) return false;
+	return _fs_impl->rename(pathFrom, pathTo);
 }
 
-Dir FS::openDir(const char* path, bool create) {
-    if (!_impl) {
-        return Dir();
-    }
-    return Dir(_impl->openDir(path, create));
-}
+// Utility functions
 
-Dir FS::openDir(const String& path, bool create) {
-    return openDir(path.c_str(), create);
-}
-
-bool FS::remove(const char* path) {
-    if (!_impl) {
-        return false;
-    }
-    return _impl->remove(path);
-}
-
-bool FS::remove(const String& path) {
-    return remove(path.c_str());
-}
-
-bool FS::rename(const char* pathFrom, const char* pathTo) {
-    if (!_impl) {
-        return false;
-    }
-    return _impl->rename(pathFrom, pathTo);
-}
-
-bool FS::rename(const String& pathFrom, const String& pathTo) {
-    return rename(pathFrom.c_str(), pathTo.c_str());
-}
-
-
-static bool sflags(const char* mode, OpenMode& om, AccessMode& am) {
-    switch (mode[0]) {
-        case 'r':
-            am = AM_READ;
-            om = OM_DEFAULT;
-            break;
-        case 'w':
-            am = AM_WRITE;
-            om = (OpenMode) (OM_CREATE | OM_TRUNCATE);
-            break;
-        case 'a':
-            am = AM_WRITE;
-            om = (OpenMode) (OM_CREATE | OM_APPEND);
-            break;
-        default:
-            return false;
-    }
-    switch(mode[1]) {
-        case '+':
-            am = (AccessMode) (AM_WRITE | AM_READ);
-            break;
-        case 0:
-            break;
-        default:
-            return false;
-    }
-    return true;
+static bool sflags(const char *mode, OpenMode& om, AccessMode& am) {
+	switch (mode[0]) {
+		case 'r':
+			am = AM_READ;
+			om = OM_DEFAULT;
+			break;
+		case 'w':
+			am = AM_WRITE;
+			om = (OpenMode) (OM_CREATE | OM_TRUNCATE);
+			break;
+		case 'a':
+			am = AM_WRITE;
+			om = (OpenMode) (OM_CREATE | OM_APPEND);
+			break;
+		default:
+			return false;
+	}
+	switch(mode[1]) {
+		case '+':
+			am = (AccessMode) (AM_WRITE | AM_READ);
+			break;
+		case 0:
+			break;
+		default:
+			return false;
+	}
+	return true;
 }
 
 
@@ -408,73 +314,82 @@ static bool sflags(const char* mode, OpenMode& om, AccessMode& am) {
 /*
 TODO: move these functions to public API:
 */
-File open(const char* path, const char* mode);
-File open(String& path, const char* mode);
+// Arduino legacy API compatibility
+File open(const char *path, const char *mode);
 
-Dir openDir(const char* path);
-Dir openDir(String& path);
+File openFile(const char *path, const char *mode);
+File openFile(String& path, const char *mode);
+
+Dir openDir(const char *path, bool create = false);
+Dir openDir(String& path, bool create = false);
 
 template<>
-bool mount<FS>(FS& fs, const char* mountPoint);
-/*
-*/
-
+bool mount<FS>(FS& fs, const char *mountPoint);
 
 struct MountEntry {
-    FSImplPtr fs;
-    String    path;
-    MountEntry* next;
+	FSImplPtr fs;
+	String path;
+	MountEntry* next;
 };
 
 static MountEntry* s_mounted = nullptr;
 
 template<>
-bool mount<FS>(FS& fs, const char* mountPoint) {
-    FSImplPtr p = fs._impl;
-    if (!p || !p->mount()) {
-        DEBUGV("FSImpl mount failed\r\n");
-        return false;
-    }
+bool mount<FS>(FS& fs, const char *mp) {
+	FSImplPtr p = fs._fs_impl;
+	if (!p || !p->mount()) {
+		DEBUGV("FSImpl mount failed\n");
+		return false;
+	}
 
-    !make sure mountPoint has trailing '/' here
+	if (!mp || *mp != '/') {
+		DEBUGV("Invalid mount point\n");
+		return false;
+	}
 
-    MountEntry* entry = new MountEntry;
-    entry->fs = p;
-    entry->path = mountPoint;
-    entry->next = s_mounted;
-    s_mounted = entry;
-    return true;
+	MountEntry* entry = new MountEntry;
+	entry->fs = p;
+	entry->path = mp;
+	entry->next = s_mounted;
+	s_mounted = entry;
+	return true;
 }
 
 
 /*
-    iterate over MountEntries and look for the ones which match the path
+  iterate over MountEntries and look for the ones which match the path
 */
-File open(const char* path, const char* mode) {
-    OpenMode om;
-    AccessMode am;
-    if (!sflags(mode, om, am)) {
-        DEBUGV("open: invalid mode `%s`\r\n", mode);
-        return File();
-    }
-
-    for (MountEntry* entry = s_mounted; entry; entry = entry->next) {
-        size_t offset = entry->path.length();
-        if (strstr(path, entry->path.c_str())) {
-            File result = entry->fs->open(path + offset);
-            if (result)
-                return result;
-        }
-    }
-
-    return File();
+File openFile(String const &path, const char *mode) {
+	for (MountEntry* entry = s_mounted; entry; entry = entry->next) {
+		size_t offset = entry->path.length();
+		if (path.startsWith(entry->path)) {
+			File result = entry->fs->openFile(path.begin()+offset, mode);
+			if (result) return result;
+		}
+	}
+	return File();
 }
 
-File open(const String& path, const char* mode) {
-    return FS::open(path.c_str(), mode);
+Dir openDir(String const &path, bool create) {
+	for (MountEntry* entry = s_mounted; entry; entry = entry->next) {
+		size_t offset = entry->path.length();
+		if (path.startsWith(entry->path)) {
+			Dir result = entry->fs->openDir(path.begin()+offset, create);
+			if (result) return result;
+		}
+	}
+	return Dir();
 }
 
-Dir openDir(const String& path) {
-    return openDir(path.c_str());
+File openFile(const char *path, const char *mode) {
+	return FS::openFile(path, mode);
+}
+
+File open(const char *path, const char *mode) {
+	return FS::openFile(path, mode);
+}
+
+Dir openDir(const char *path, bool create) {
+	return FS::openDir(path.c_str(), create);
 }
 #endif

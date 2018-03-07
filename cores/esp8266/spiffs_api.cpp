@@ -25,7 +25,7 @@
 
 using namespace fs;
 
-FileImplPtr SPIFFSImpl::open(const char* path, OpenMode openMode, AccessMode accessMode)
+FileImplPtr SPIFFSImpl::openFile(const char* path, OpenMode openMode, AccessMode accessMode)
 {
     if (!isSpiffsFilenameValid(path)) {
         DEBUGV("SPIFFSImpl::open: invalid path=`%s` \r\n", path);
@@ -52,14 +52,14 @@ FileImplPtr SPIFFSImpl::open(const char* path, OpenMode openMode, AccessMode acc
     return std::make_shared<SPIFFSFileImpl>(this, fd);
 }
 
-bool SPIFFSImpl::exists(const char* path)
+bool SPIFFSImpl::exists(const char* path) const
 {
     if (!isSpiffsFilenameValid(path)) {
         DEBUGV("SPIFFSImpl::exists: invalid path=`%s` \r\n", path);
         return false;
     }
     spiffs_stat stat;
-    int rc = SPIFFS_stat(&_fs, path, &stat);
+    int rc = SPIFFS_stat(const_cast<spiffs*>(&_fs), path, &stat);
     return rc == SPIFFS_OK;
 }
 

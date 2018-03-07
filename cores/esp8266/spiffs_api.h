@@ -58,17 +58,8 @@ public:
         memset(&_fs, 0, sizeof(_fs));
     }
 
-    bool exists(const char* path) override;
-    bool isDir(const char* path) override {
-        (void)path;
-        return false;
-    }
-    time_t mtime(const char* path) override {
-        (void)path;
-        return 0;
-    }
-
-    FileImplPtr open(const char* path, OpenMode openMode, AccessMode accessMode) override;
+    FileImplPtr openFile(const char* path, OpenMode openMode, AccessMode accessMode) override;
+    bool exists(const char* path) const override;
     DirImplPtr openDir(const char* path, bool create) override;
 
     bool rename(const char* pathFrom, const char* pathTo) override
@@ -89,7 +80,7 @@ public:
         }
         return true;
     }
-    bool info(FSInfo& info) override
+    bool info(FSInfo& info) const override
     {
         info.maxOpenFiles = _maxOpenFds;
         info.blockSize = _blockSize;
@@ -97,7 +88,7 @@ public:
         info.maxOpenFiles = _maxOpenFds;
         info.maxPathLength = SPIFFS_OBJ_NAME_LEN;
         uint32_t totalBytes, usedBytes;
-        auto rc = SPIFFS_info(&_fs, &totalBytes, &usedBytes);
+        auto rc = SPIFFS_info(const_cast<spiffs*>(&_fs), &totalBytes, &usedBytes);
         if (rc != SPIFFS_OK) {
             DEBUGV("SPIFFS_info: rc=%d, err=%d\r\n", rc, _fs.err_code);
             return false;
@@ -172,6 +163,24 @@ public:
         }
 
         return true;
+    }
+
+    bool isDir(const char* path) const override
+    {
+        // Not implemented
+        return false;
+    }
+
+    size_t size(const char* path) const override
+    {
+        // Not implemented
+        return 0;
+    }
+
+    time_t mtime(const char* path) const override
+    {
+        // Not implemented
+        return 0;
     }
 
 protected:
@@ -369,17 +378,13 @@ public:
         return _stat.size;
     }
 
-    time_t mtime() const override
-    {
-        return 0;
-    }
-
     void close() override
     {
         CHECKFD();
 
         SPIFFS_close(_fs->getFs(), _fd);
         DEBUGV("SPIFFS_close: fd=%d\r\n", _fd);
+        _fd = 0;
     }
 
     const char* name() const override
@@ -387,6 +392,34 @@ public:
         CHECKFD();
 
         return (const char*) _stat.name;
+    }
+
+    time_t mtime() const override
+    {
+        CHECKFD();
+
+        // Not implemented
+        return 0;
+    }
+
+    bool remove() override
+    {
+        CHECKFD();
+
+        close();
+        return _fs->remove((const char*)_stat.name);
+    }
+
+    bool rename(const char *pathTo) override
+    {
+        CHECKFD();
+
+        close();
+        if (_fs->rename((const char*)_stat.name, pathTo)) {
+            strncpy((char*)_stat.name, pathTo, SPIFFS_OBJ_NAME_LEN);
+            return true;
+        }
+        return false;
     }
 
 protected:
@@ -416,6 +449,7 @@ public:
         , _dir(dir)
         , _valid(false)
     {
+        memset(&_dirent, 0, sizeof(_dirent));
     }
 
     ~SPIFFSDirImpl() override
@@ -423,7 +457,26 @@ public:
         SPIFFS_closedir(&_dir);
     }
 
-    FileImplPtr openFile(OpenMode openMode, AccessMode accessMode) override
+    FileImplPtr openFile(const char* name, OpenMode openMode,
+        AccessMode accessMode) override
+    {
+        if (!_valid) {
+            return FileImplPtr();
+        }
+        // Not implemented
+        return FileImplPtr();
+    }
+
+    DirImplPtr openDir(const char* name, bool create) override
+    {
+        if (!_valid) {
+            return DirImplPtr();
+        }
+        // Not implemented
+        return DirImplPtr();
+    }
+
+    FileImplPtr openEntryFile(OpenMode openMode, AccessMode accessMode) override
     {
         if (!_valid) {
             return FileImplPtr();
@@ -439,41 +492,66 @@ public:
         return std::make_shared<SPIFFSFileImpl>(_fs, fd);
     }
 
-    FileImplPtr openFile(const char* name, OpenMode openMode, AccessMode accessMode) override
+    DirImplPtr openEntryDir() override
     {
-        (void)name;
-        (void)openMode;
-        (void)accessMode;
-        DEBUGV("Unsupported operation");
-        return FileImplPtr();
-    }
-
-    DirImplPtr openDir() override
-    {
-        DEBUGV("Unsupported operation");
+        if (!_valid) {
+            return DirImplPtr();
+        }
+        // Not implemented
         return DirImplPtr();
     }
 
-    DirImplPtr openDir(const char* name, bool create) override
-    {
-        (void)name;
-        (void)create;
-        DEBUGV("Unsupported operation");
-        return DirImplPtr();
-    }
-
-    bool remove() override
+    bool exists(const char* path) const override
     {
         if (!_valid) {
             return false;
         }
-        return _fs->remove((const char*)_dirent.name);
+        // Not implemented
+        return false;
+    }
+
+    bool isDir(const char* name) const override
+    {
+        if (!_valid) {
+            return false;
+        }
+        // Not implemented
+        return false;
+    }
+
+    size_t size(const char* name) const override
+    {
+        if (!_valid) {
+            return false;
+        }
+        // Not implemented
+        return 0;
+    }
+
+    time_t mtime(const char* name) const override
+    {
+        if (!_valid) {
+            return false;
+        }
+        // Not implemented
+        return 0;
     }
 
     bool remove(const char* name) override
     {
-        (void)name;
-        DEBUGV("Unsupported operation");
+        if (!_valid) {
+            return false;
+        }
+        // Not implemented
+        return false;
+    }
+
+    bool rename(const char *pathFrom, const char *pathTo) override
+    {
+        if (!_valid) {
+            return false;
+        }
+        // Not implemented
         return false;
     }
 
@@ -497,40 +575,73 @@ public:
 
     time_t entryMtime() const override
     {
+        if (!_valid) {
+            return 0;
+        }
+
+        // Not implemented
         return 0;
     }
 
     bool isEntryDir() const override
     {
+        if (!_valid) {
+            return false;
+        }
+
+        // Not implemented
         return false;
-    }
-
-    bool isDir(const char* path) const override {
-        (void)path;
-        return false;
-    }
-
-    const char* name() const override
-    {
-        return _pattern.c_str();
-    }
-
-    time_t mtime() const override
-    {
-        return 0;
     }
 
     bool next(bool reset) override
     {
-        if (reset) {
-            _dir.block = _dir.entry = 0;
-        }
+        if (reset) memset(&_dirent, 0, sizeof(_dirent));
         const int n = _pattern.length();
         do {
             spiffs_dirent* result = SPIFFS_readdir(&_dir, &_dirent);
             _valid = (result != nullptr);
         } while(_valid && strncmp((const char*) _dirent.name, _pattern.c_str(), n) != 0);
         return _valid;
+    }
+
+    bool removeEntry() override
+    {
+        if (!_valid) {
+            return false;
+        }
+
+        // Not implemented
+        return false;
+    }
+
+    bool renameEntry(const char *pathTo) override
+    {
+        if (!_valid) {
+            return false;
+        }
+
+        // Not implemented
+        return false;
+    }
+
+    time_t mtime() const override
+    {
+        if (!_valid) {
+            return 0;
+        }
+
+        // Not implemented
+        return 0;
+    }
+
+    const char* name() const override
+    {
+        if (!_valid) {
+            return nullptr;
+        }
+
+        // Not implemented
+        return nullptr;
     }
 
 protected:

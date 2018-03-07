@@ -25,66 +25,83 @@
 
 namespace fs {
 
+class FSImpl;
+
 class FileImpl {
 public:
-    virtual ~FileImpl() { }
-    virtual size_t write(const uint8_t *buf, size_t size) = 0;
-    virtual size_t read(uint8_t* buf, size_t size) = 0;
-    virtual void flush() = 0;
-    virtual bool seek(uint32_t pos, SeekMode mode) = 0;
-    virtual size_t position() const = 0;
-    virtual size_t size() const = 0;
-    virtual void close() = 0;
-    virtual const char* name() const = 0;
-    virtual time_t mtime() const = 0;
+	virtual ~FileImpl() { }
+	virtual size_t write(const uint8_t *buf, size_t size) = 0;
+	virtual size_t read(uint8_t* buf, size_t size) = 0;
+	virtual void flush() = 0;
+	virtual bool seek(uint32_t pos, SeekMode mode) = 0;
+
+	virtual size_t position() const = 0;
+	virtual size_t size() const = 0;
+	virtual const char* name() const = 0;
+	virtual time_t mtime() const = 0;
+	virtual bool remove() = 0;
+	virtual bool rename(const char *pathTo) = 0;
+
+	virtual void close() = 0;
 };
 
 enum OpenMode {
-    OM_DEFAULT = 0,
-    OM_CREATE = 1,
-    OM_APPEND = 2,
-    OM_TRUNCATE = 4
+	OM_DEFAULT = 0,
+	OM_CREATE = 1,
+	OM_APPEND = 2,
+	OM_TRUNCATE = 4
 };
 
 enum AccessMode {
-    AM_READ = 1,
-    AM_WRITE = 2,
-    AM_RW = AM_READ | AM_WRITE
+	AM_READ = 1,
+	AM_WRITE = 2,
+	AM_RW = AM_READ | AM_WRITE
 };
 
 class DirImpl {
 public:
-    virtual ~DirImpl() { }
-    virtual FileImplPtr openFile(OpenMode openMode, AccessMode accessMode) = 0;
-    virtual DirImplPtr openDir() = 0;
-    virtual FileImplPtr openFile(const char* name, OpenMode openMode, AccessMode accessMode) = 0;
-    virtual DirImplPtr openDir(const char* name, bool create) = 0;
-    virtual bool remove(const char* name) = 0;
-    virtual bool remove() = 0;
-    virtual const char* entryName() const = 0;
-    virtual size_t entrySize() const = 0;
-    virtual time_t entryMtime() const = 0;
-    virtual bool isEntryDir() const = 0;
-    virtual bool isDir(const char* name) const = 0;
-    virtual const char* name() const = 0;
-    virtual time_t mtime() const = 0;
-    virtual bool next(bool reset) = 0;
+	virtual ~DirImpl() { }
+	virtual FileImplPtr openFile(const char* name, OpenMode openMode,
+		AccessMode accessMode) = 0;
+	virtual DirImplPtr openDir(const char* name, bool create) = 0;
+	virtual bool exists(const char* path) const = 0;
+	virtual bool isDir(const char* name) const = 0;
+	virtual size_t size(const char* name) const = 0;
+	virtual time_t mtime(const char* name) const = 0;
+	virtual bool remove(const char* name) = 0;
+	virtual bool rename(const char *nameFrom, const char *nameTo) = 0;
+
+	virtual bool next(bool reset) = 0;
+	virtual const char* entryName() const = 0;
+	virtual size_t entrySize() const = 0;
+	virtual time_t entryMtime() const = 0;
+	virtual bool isEntryDir() const = 0;
+
+	virtual FileImplPtr openEntryFile(OpenMode openMode,
+		AccessMode accessMode) = 0;
+	virtual DirImplPtr openEntryDir() = 0;
+	virtual bool removeEntry() = 0;
+	virtual bool renameEntry(const char *pathTo) = 0;
+
+	virtual time_t mtime() const = 0;
+	virtual const char* name() const = 0;
 };
 
 class FSImpl {
 public:
-    virtual bool begin() = 0;
-    virtual void end() = 0;
-    virtual bool format() = 0;
-    virtual bool info(FSInfo& info) = 0;
-    virtual bool exists(const char* path) = 0;
-    virtual bool isDir(const char* path) = 0;
-    virtual time_t mtime(const char* path) = 0;
-    virtual FileImplPtr open(const char* path, OpenMode openMode, AccessMode accessMode) = 0;
-    virtual DirImplPtr openDir(const char* path, bool create) = 0;
-    virtual bool rename(const char* pathFrom, const char* pathTo) = 0;
-    virtual bool remove(const char* path) = 0;
-
+	virtual bool begin() = 0;
+	virtual void end() = 0;
+	virtual bool format() = 0;
+	virtual bool info(FSInfo& info) const = 0;
+	virtual bool exists(const char* path) const = 0;
+	virtual bool isDir(const char* path) const = 0;
+	virtual size_t size(const char* path) const = 0;
+	virtual time_t mtime(const char* path) const = 0;
+	virtual FileImplPtr openFile(const char* path, OpenMode openMode,
+		AccessMode accessMode) = 0;
+	virtual DirImplPtr openDir(const char* path, bool create) = 0;
+	virtual bool remove(const char* path) = 0;
+	virtual bool rename(const char* pathFrom, const char* pathTo) = 0;
 };
 
 } // namespace fs
