@@ -413,15 +413,19 @@ public:
         return _fs->remove((const char*)_stat.name);
     }
 
-    bool rename(const char *pathTo) override
+    bool rename(const char *nameTo) override
     {
         CHECKFD();
 
         close();
-        if (_fs->rename((const char*)_stat.name, pathTo)) {
-            strncpy((char*)_stat.name, pathTo, SPIFFS_OBJ_NAME_LEN);
+        // Not implemented
+        (void)nameTo;
+        /*
+        if (_fs->rename((const char*)_stat.name, nameTo)) {
+            strncpy((char*)_stat.name, nameTo, SPIFFS_OBJ_NAME_LEN);
             return true;
         }
+        */
         return false;
     }
 

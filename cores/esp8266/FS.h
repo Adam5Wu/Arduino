@@ -79,9 +79,9 @@ public:
 
 	void close();
 	bool remove();
-	bool rename(const char *pathTo);
-	bool rename(String const &pathTo)
-	{ return rename(pathTo.c_str()); }
+	bool rename(const char *nameTo);
+	bool rename(String const &nameTo)
+	{ return rename(nameTo.c_str()); }
 
 protected:
 	FileImplPtr _file_impl;
