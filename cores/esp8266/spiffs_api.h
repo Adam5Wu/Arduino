@@ -372,6 +372,14 @@ public:
         return result;
     }
 
+    bool truncate() override
+    {
+        CHECKFD();
+
+        // Not implemented
+        return false;
+    }
+
     size_t size() const override
     {
         CHECKFD();

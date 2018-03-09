@@ -69,6 +69,11 @@ bool File::seek(int32_t pos, SeekMode mode) {
 	return _file_impl->seek(pos, mode);
 }
 
+bool File::truncate() {
+	if (!_file_impl) return false;
+	return _file_impl->truncate();
+}
+
 size_t File::size() const {
 	if (!_file_impl) return 0;
 	return _file_impl->size();

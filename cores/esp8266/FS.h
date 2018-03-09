@@ -69,6 +69,9 @@ public:
 	bool seek(int32_t pos, SeekMode mode);
 	bool seek(int32_t pos)
 	{ return seek(pos, SeekSet); }
+	bool truncate();
+	bool truncate(int32_t pos)
+	{ return seek(pos)? truncate() : false; }
 
 	size_t size() const;
 	time_t mtime() const;
