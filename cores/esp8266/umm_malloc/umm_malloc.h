@@ -38,6 +38,7 @@ void *umm_info( void *ptr, int force );
 void *umm_malloc( size_t size );
 void *umm_calloc( size_t num, size_t size );
 void *umm_realloc( void *ptr, size_t size );
+size_t umm_size( void *ptr );
 void umm_free( void *ptr );
 
 size_t umm_free_heap_size( void );

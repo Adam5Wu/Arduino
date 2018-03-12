@@ -623,6 +623,7 @@ UMM_H_ATTPACKPRE typedef struct umm_block_t {
 #  define umm_malloc  malloc
 #  define umm_calloc  calloc
 #  define umm_realloc realloc
+#  define umm_size    msize
 #endif
 
 umm_block *umm_heap = NULL;
@@ -853,7 +854,7 @@ static int check_poison_block( umm_block *pblock ) {
 
     pc_cur = pc + *((UMM_POISONED_BLOCK_LEN_TYPE *)pc) - UMM_POISON_SIZE_AFTER;
     if (!check_poison(pc_cur, UMM_POISON_SIZE_AFTER, "after")) {
-	  printf("block start: %08x\n", pc + sizeof(UMM_POISONED_BLOCK_LEN_TYPE) + UMM_POISON_SIZE_BEFORE);
+      printf("block start: %08x\n", pc + sizeof(UMM_POISONED_BLOCK_LEN_TYPE) + UMM_POISON_SIZE_BEFORE);
       UMM_HEAP_CORRUPTION_CB();
       ok = 0;
       goto clean;
@@ -1645,6 +1646,47 @@ static void *_umm_realloc( void *ptr, size_t size ) {
 
 /* ------------------------------------------------------------------------ */
 
+static size_t _umm_size( void *ptr ) {
+
+  unsigned short int blockSize;
+
+  unsigned short int c;
+
+  size_t curSize;
+
+  if (umm_heap == NULL) {
+    umm_init();
+  }
+
+  if( ((void *)NULL == ptr) ) {
+    DBG_LOG_DEBUG( "size the NULL pointer = 0\n" );
+
+    return( 0 );
+  }
+
+  /* Protect the critical section... */
+  UMM_CRITICAL_ENTRY();
+
+  /* Figure out which block we're in. Note the use of truncated division... */
+
+  c = (((char *)ptr)-(char *)(&(umm_heap[0])))/sizeof(umm_block);
+
+  /* Figure out how big this block is... */
+
+  blockSize = (UMM_NBLOCK(c) - c);
+
+  /* Figure out how many bytes are in this block */
+
+  curSize   = (blockSize*sizeof(umm_block))-(sizeof(((umm_block *)0)->header));
+
+  /* Release the critical section... */
+  UMM_CRITICAL_EXIT();
+
+  return( curSize );
+}
+
+/* ------------------------------------------------------------------------ */
+
 void *umm_malloc( size_t size ) {
   void *ret;
 
@@ -1715,6 +1757,28 @@ void *umm_realloc( void *ptr, size_t size ) {
   ret = _umm_realloc( ptr, size );
 
   ret = GET_POISONED(ret, size);
+
+  return ret;
+}
+
+/* ------------------------------------------------------------------------ */
+
+size_t umm_size( void *ptr ) {
+  size_t ret;
+
+  ptr = GET_UNPOISONED(ptr);
+
+  /* check poison of each blocks, if poisoning is enabled */
+  if (!CHECK_POISON_ALL_BLOCKS()) {
+    return 0;
+  }
+
+  /* check full integrity of the heap, if this check is enabled */
+  if (!INTEGRITY_CHECK()) {
+    return 0;
+  }
+
+  ret = _umm_size( ptr );
 
   return ret;
 }
