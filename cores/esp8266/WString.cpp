@@ -825,13 +825,13 @@ float String::toFloat(void) const {
 
 bool String::toInt(int &val, unsigned char base) const {
 	long ParseVal;
-	bool Ret = toLong(ParseVal);
+	bool Ret = toLong(ParseVal, base);
 	return val = ParseVal, Ret;
 }
 
 bool String::toUInt(unsigned int &val, unsigned char base) const {
 	unsigned long ParseVal;
-	bool Ret = toULong(ParseVal);
+	bool Ret = toULong(ParseVal, base);
 	return val = ParseVal, Ret;
 }
 
@@ -839,40 +839,40 @@ bool String::toLong(long &val, unsigned char base) const {
 	if (empty()) return false;
 	char *endptr;
 	val = strtol(buffer, &endptr, base);
-	if (endptr != end()) return false;
+	return endptr == end();
 }
 
 bool String::toULong(unsigned long &val, unsigned char base) const {
 	if (empty()) return false;
 	char *endptr;
 	val = strtoul(buffer, &endptr, base);
-	if (endptr != end()) return false;
+	return endptr == end();
 }
 
 bool String::toLLong(long long &val, unsigned char base) const {
 	if (empty()) return false;
 	char *endptr;
 	val = strtoll(buffer, &endptr, base);
-	if (endptr != end()) return false;
+	return endptr == end();
 }
 
 bool String::toULLong(unsigned long long &val, unsigned char base) const {
 	if (empty()) return false;
 	char *endptr;
 	val = strtoull(buffer, &endptr, base);
-	if (endptr != end()) return false;
+	return endptr == end();
 }
 
 bool String::toFloat(float &val) const {
 	if (empty()) return false;
 	char *endptr;
 	val = strtof(buffer, &endptr);
-	if (endptr != end()) return false;
+	return endptr == end();
 }
 
 bool String::toDouble(double &val) const {
 	if (empty()) return false;
 	char *endptr;
 	val = strtod(buffer, &endptr);
-	if (endptr != end()) return false;
+	return endptr == end();
 }
