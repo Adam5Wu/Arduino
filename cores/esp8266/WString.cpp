@@ -811,14 +811,68 @@ void String::clear(bool free) {
 // /*  Parsing / Conversion                     */
 // /*********************************************/
 
-long String::toInt(void) const {
-	if(buffer)
-		return atol(buffer);
+int String::toInt(void) const {
+	int Ret;
+	if (toInt(Ret)) return Ret;
 	return 0;
 }
 
 float String::toFloat(void) const {
-	if(buffer)
-		return atof(buffer);
+	float Ret;
+	if (toFloat(Ret)) return Ret;
 	return 0;
+}
+
+bool String::toInt(int &val, unsigned char base) const {
+	long ParseVal;
+	bool Ret = toLong(ParseVal);
+	return val = ParseVal, Ret;
+}
+
+bool String::toUInt(unsigned int &val, unsigned char base) const {
+	unsigned long ParseVal;
+	bool Ret = toULong(ParseVal);
+	return val = ParseVal, Ret;
+}
+
+bool String::toLong(long &val, unsigned char base) const {
+	if (empty()) return false;
+	char *endptr;
+	val = strtol(buffer, &endptr, base);
+	if (endptr != end()) return false;
+}
+
+bool String::toULong(unsigned long &val, unsigned char base) const {
+	if (empty()) return false;
+	char *endptr;
+	val = strtoul(buffer, &endptr, base);
+	if (endptr != end()) return false;
+}
+
+bool String::toLLong(long long &val, unsigned char base) const {
+	if (empty()) return false;
+	char *endptr;
+	val = strtoll(buffer, &endptr, base);
+	if (endptr != end()) return false;
+}
+
+bool String::toULLong(unsigned long long &val, unsigned char base) const {
+	if (empty()) return false;
+	char *endptr;
+	val = strtoull(buffer, &endptr, base);
+	if (endptr != end()) return false;
+}
+
+bool String::toFloat(float &val) const {
+	if (empty()) return false;
+	char *endptr;
+	val = strtof(buffer, &endptr);
+	if (endptr != end()) return false;
+}
+
+bool String::toDouble(double &val) const {
+	if (empty()) return false;
+	char *endptr;
+	val = strtod(buffer, &endptr);
+	if (endptr != end()) return false;
 }

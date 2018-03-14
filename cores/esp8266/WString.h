@@ -245,8 +245,17 @@ class String {
 		void trim(void);
 
 		// parsing/conversion
-		long toInt(void) const;
+		int toInt(void) const;
 		float toFloat(void) const;
+
+		bool toInt(int &val, unsigned char base = 10) const;
+		bool toUInt(unsigned int &val, unsigned char base = 10) const;
+		bool toLong(long &val, unsigned char base = 10) const;
+		bool toULong(unsigned long &val, unsigned char base = 10) const;
+		bool toLLong(long long &val, unsigned char base = 10) const;
+		bool toULLong(unsigned long long &val, unsigned char base = 10) const;
+		bool toFloat(float &val) const;
+		bool toDouble(double &val) const;
 
 		bool empty(void) const;
 		void clear(bool free = false);
@@ -258,7 +267,7 @@ class String {
 		char *buffer;           // the actual char array
 		unsigned int capacity;  // the array length minus one (for the '\0')
 		unsigned int len;       // the String length (not counting the '\0')
-	protected:
+
 		void init(void);
 		void invalidate(void);
 		unsigned char changeBuffer(unsigned int maxStrLen);

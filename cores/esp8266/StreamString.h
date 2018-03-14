@@ -31,6 +31,12 @@
 
 class PrintString: public String, public Print {
   public:
+    PrintString(void) {}
+    PrintString(const __FlashStringHelper *str) : String(str) {}
+#ifdef __GXX_EXPERIMENTAL_CXX0X__
+	PrintString(String &&rval) : String(std::move(rval)) {}
+#endif
+
     size_t write(const uint8_t *buffer, size_t size) override;
     size_t write(uint8_t data) override;
 };
