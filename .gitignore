@@ -20,3 +20,4 @@ platform.local.txt
 *.gcno
 *.gcda
 *.o
+*.a
