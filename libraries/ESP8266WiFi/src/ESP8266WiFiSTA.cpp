@@ -508,7 +508,6 @@ wl_status_t ESP8266WiFiSTAClass::status() {
         case STATION_IDLE:
             return WL_IDLE_STATUS;
         default:
-			Serial.printf("WiFi: %d\n",status);
             return WL_DISCONNECTED;
     }
 }
