@@ -56,7 +56,7 @@ class String {
 		// be false).
 		String(const char *cstr = "", size_t len = 0);
 		String(String const &str);
-		String(const __FlashStringHelper *str);
+		String(const __FlashStringHelper *str, size_t len = 0);
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
 		String(String &&rval);
 		String(StringSumHelper &&rval);

@@ -43,9 +43,10 @@ String::String(String const &value) {
 	*this = value;
 }
 
-String::String(const __FlashStringHelper *pstr) {
+String::String(const __FlashStringHelper *pstr, size_t len) {
 	init();
-	*this = pstr; // see operator =
+	if (pstr)
+		copy(pstr, len? len: strlen_P((PGM_P)pstr));
 }
 
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
@@ -151,7 +152,7 @@ String & String::copy(const char *cstr, unsigned int length) {
 		return *this;
 	}
 	len = length;
-	strncpy(buffer, cstr, length);
+	memcpy(buffer, cstr, length);
 	buffer[len] = '\0';
 	return *this;
 }
@@ -162,7 +163,7 @@ String & String::copy(const __FlashStringHelper *pstr, unsigned int length) {
 		return *this;
 	}
 	len = length;
-	strncpy_P(buffer, (PGM_P)pstr, length);
+	memcpy_P(buffer, (PGM_P)pstr, length);
 	buffer[len] = '\0';
 	return *this;
 }
@@ -308,7 +309,7 @@ unsigned char String::concat(const char *cstr, unsigned int length) {
 	unsigned int newlen = len + length;
 	if(!reserve(newlen))
 		return 0;
-	strncpy(buffer + len, cstr, length);
+	memcpy(buffer + len, cstr, length);
 	buffer[newlen] = '\0';
 	len = newlen;
 	return 1;
@@ -391,7 +392,7 @@ StringSumHelper & operator +(const StringSumHelper &lhs, double num) {
 StringSumHelper & operator + (const StringSumHelper &lhs,
 	const __FlashStringHelper *rhs) {
 	StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
-	if (!a.concat(rhs))  a.invalidate();
+	if (!a.concat(rhs)) a.invalidate();
 	return a;
 }
 
@@ -593,7 +594,7 @@ void String::getBytes(unsigned char *buf, unsigned int bufsize, unsigned int ind
 	unsigned int n = bufsize - 1;
 	if(n > len - index)
 		n = len - index;
-	strncpy((char *) buf, buffer + index, n);
+	memcpy((char *) buf, buffer + index, n);
 	buf[n] = 0;
 }
 
@@ -666,21 +667,12 @@ int String::lastIndexOf(String const &s2, unsigned int fromIndex) const {
 }
 
 String String::substring(unsigned int left, unsigned int right) const {
-	if(left > right) {
-		unsigned int temp = right;
-		right = left;
-		left = temp;
-	}
 	String out;
-	if(left >= len)
-		return out;
-	if(right > len)
-		right = len;
-	char temp = buffer[right];  // save the replaced character
-	buffer[right] = '\0';
-	out = buffer + left;  // pointer arithmetic
-	buffer[right] = temp;  //restore character
-	return out;
+	if(left < right && left < len) {
+		if(right > len) right = len;
+		out.concat(buffer+left, right-left);
+	}
+	return std::move(out);
 }
 
 // /*********************************************/
@@ -690,9 +682,8 @@ String String::substring(unsigned int left, unsigned int right) const {
 void String::replace(char find, char replace) {
 	if(!buffer)
 		return;
-	for(char *p = buffer; *p; p++) {
-		if(*p == find)
-			*p = replace;
+	for(char *p = buffer; p-buffer < len; p++) {
+		if(*p == find) *p = replace;
 	}
 }
 
@@ -760,7 +751,7 @@ void String::remove(unsigned int index, unsigned int count) {
 	}
 	char *writeTo = buffer + index;
 	len = len - count;
-	strncpy(writeTo, buffer + index + count, len - index);
+	memcpy(writeTo, buffer + index + count, len - index);
 	buffer[len] = 0;
 }
 
