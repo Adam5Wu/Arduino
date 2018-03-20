@@ -741,18 +741,16 @@ void String::remove(unsigned int index) {
 }
 
 void String::remove(unsigned int index, unsigned int count) {
-	if(index >= len) {
+	if(index >= len || count <= 0) {
 		return;
 	}
-	if(count <= 0) {
-		return;
-	}
-	if(count > len - index) {
+	if(count < len - index) {
+		char *writeTo = buffer + index;
+		memmove(writeTo, writeTo + count, len - count - index);
+	} else {
 		count = len - index;
 	}
-	char *writeTo = buffer + index;
 	len = len - count;
-	memcpy(writeTo, buffer + index + count, len - index);
 	buffer[len] = 0;
 }
 
