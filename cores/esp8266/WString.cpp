@@ -23,6 +23,7 @@
  */
 
 #include <Arduino.h>
+#include <utility>
 #include "WString.h"
 #include "stdlib_noniso.h"
 
