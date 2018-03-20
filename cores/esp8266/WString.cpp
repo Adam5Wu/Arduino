@@ -682,7 +682,7 @@ String String::substring(unsigned int left, unsigned int right) const {
 void String::replace(char find, char replace) {
 	if(!buffer)
 		return;
-	for(char *p = buffer; p-buffer < len; p++) {
+	for(char *p = buffer; (unsigned int)(p-buffer) < len; p++) {
 		if(*p == find) *p = replace;
 	}
 }
