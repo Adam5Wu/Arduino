@@ -155,7 +155,7 @@ SECTIONS
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *.cpp.o(.iram.text)
     *.c.o(.iram.text)
-    *(.rodata._ZTV*) /* C++ vtables */
+/*    *(.rodata._ZTV*) *//* C++ vtables */
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
