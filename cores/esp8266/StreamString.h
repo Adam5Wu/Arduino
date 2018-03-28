@@ -34,7 +34,7 @@ class PrintString: public String, public Print {
     PrintString(void) {}
     PrintString(const __FlashStringHelper *str) : String(str) {}
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
-	PrintString(String &&rval) : String(std::move(rval)) {}
+    PrintString(String &&rval) : String(std::move(rval)) {}
 #endif
 
     size_t write(const uint8_t *buffer, size_t size) override;
@@ -42,6 +42,8 @@ class PrintString: public String, public Print {
 };
 
 class StreamString: public Stream, public String {
+  protected:
+    size_t _offset = 0;
   public:
     StreamString(void) {}
     StreamString(const __FlashStringHelper *str) : String(str) {}
@@ -52,10 +54,14 @@ class StreamString: public Stream, public String {
     size_t write(const uint8_t *buffer, size_t size) override;
     size_t write(uint8_t data) override;
 
+    size_t readBytes(char *buffer, size_t length) override;
+
     int available() override;
     int read() override;
     int peek() override;
     void flush() override;
+
+    void reset() { _offset = 0; }
 };
 
 
