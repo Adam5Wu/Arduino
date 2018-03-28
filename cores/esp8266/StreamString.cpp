@@ -59,14 +59,14 @@ int StreamString::available() {
 }
 
 int StreamString::read() {
-    if(_offset < length()) {
+    if(available()) {
         return charAt(_offset++);
     }
     return -1;
 }
 
 int StreamString::peek() {
-    if(_offset < length()) {
+    if(available()) {
         return charAt(_offset);
     }
     return -1;
