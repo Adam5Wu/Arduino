@@ -50,7 +50,7 @@ size_t StreamString::write(uint8_t data) {
 }
 
 size_t StreamString::readBytes(char *buffer, size_t length) {
-    size_t readlen = min(length, (size_t)available());
+    size_t readlen = std::min(length, (size_t)available());
     memcpy(buffer, begin()+_offset, readlen);
     _offset += readlen;
     return readlen;
