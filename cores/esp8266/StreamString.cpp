@@ -23,6 +23,8 @@
 #include <Arduino.h>
 #include "StreamString.h"
 
+#include <algorithm>
+
 size_t PrintString::write(const uint8_t *data, size_t size) {
     if(size && data) {
         if(concat((const char *)data, size))
