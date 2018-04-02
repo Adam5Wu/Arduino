@@ -125,7 +125,7 @@ uint64_t EspClass::deepSleepMax()
 
 bool EspClass::rtcUserMemoryRead(uint32_t offset, uint32_t *data, size_t size)
 {
-    if (size + offset > 512) {
+    if (size + offset*4 > 512) {
         return false;
     } else {
         return system_rtc_mem_read(64 + offset, data, size);
@@ -134,7 +134,7 @@ bool EspClass::rtcUserMemoryRead(uint32_t offset, uint32_t *data, size_t size)
 
 bool EspClass::rtcUserMemoryWrite(uint32_t offset, uint32_t *data, size_t size)
 {
-    if (size + offset > 512) {
+    if (size + offset*4 > 512) {
         return false;
     } else {
         return system_rtc_mem_write(64 + offset, data, size);
