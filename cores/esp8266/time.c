@@ -34,8 +34,8 @@ extern char* sntp_asctime(const struct tm *t);
 extern struct tm* sntp_localtime(const time_t *clock);
 extern uint64_t micros64();
 
-// time gap in seconds from 01/01/1970 (UNIX epoch) to 01/01/2000
-#define DIFF1970TO2000 946684800UL
+// time gap in seconds from 01.01.1900 (NTP time) to 01.01.1970 (UNIX time)
+#define DIFF1900TO1970 2208988800UL
 
 bool timeshift64_is_set = false;
 static uint64_t timeshift64 = 0;
@@ -80,12 +80,9 @@ int clock_gettime(clockid_t unused, struct timespec *tp)
 time_t time(time_t * t)
 {
     time_t seconds = sntp_get_current_timestamp();
-    if (!seconds) {
-        seconds = DIFF1970TO2000;
-        seconds+= millis() / 1000;
-    }
-    if (t) {
-      *t = seconds;
+    if (t)
+    {
+        *t = seconds;
     }
     return seconds;
 }
