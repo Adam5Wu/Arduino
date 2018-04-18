@@ -9,7 +9,7 @@ PHDRS
   irom0_0_phdr PT_LOAD;
 }
 /*  Default entry point:  */
-ENTRY(call_user_start)
+ENTRY(app_entry)
 EXTERN(_DebugExceptionVector)
 EXTERN(_DoubleExceptionVector)
 EXTERN(_KernelExceptionVector)
@@ -75,6 +75,10 @@ SECTIONS
     _Pri_3_HandlerAddress = ABSOLUTE(.);
     _data_end = ABSOLUTE(.);
   } >dram0_0_seg :dram0_0_phdr
+  .noinit : ALIGN(4)
+  {
+    *(.noinit)
+  } >dram0_0_seg :dram0_0_phdr
   .irom0.text : ALIGN(4)
   {
     _irom0_text_start = ABSOLUTE(.);
@@ -93,7 +97,6 @@ SECTIONS
     *liblwip2.a:(.literal .text .literal.* .text.*)
     *liblwip2_1460.a:(.literal .text .literal.* .text.*)
     *libaxtls.a:(.literal .text .literal.* .text.*)
-    *libbearssl.a:(.literal .text .literal.* .text.*)
     *libat.a:(.literal.* .text.*)
     *libcrypto.a:(.literal.* .text.*)
     *libespnow.a:(.literal.* .text.*)
