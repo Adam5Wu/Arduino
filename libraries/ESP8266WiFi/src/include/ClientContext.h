@@ -487,9 +487,9 @@ protected:
             _rx_buf_offset += size;
         } else if(!_rx_buf->next) {
             DEBUGV(":c0 %d, %d\r\n", size, _rx_buf->tot_len);
-            if(_pcb) {
-                tcp_recved(_pcb, _rx_buf->len);
-            }
+            //if(_pcb) {
+            //    tcp_recved(_pcb, _rx_buf->len);
+            //}
             pbuf_free(_rx_buf);
             _rx_buf = 0;
             _rx_buf_offset = 0;
@@ -499,9 +499,9 @@ protected:
             _rx_buf = _rx_buf->next;
             _rx_buf_offset = 0;
             pbuf_ref(_rx_buf);
-            if(_pcb) {
-                tcp_recved(_pcb, head->len);
-            }
+            //if(_pcb) {
+            //    tcp_recved(_pcb, head->len);
+            //}
             pbuf_free(head);
         }
     }
@@ -519,9 +519,11 @@ protected:
 
         if(_rx_buf) {
             DEBUGV(":rch %d, %d\r\n", _rx_buf->tot_len, pb->tot_len);
+			tcp_recved(pcb, pb->tot_len);
             pbuf_cat(_rx_buf, pb);
         } else {
             DEBUGV(":rn %d\r\n", pb->tot_len);
+			tcp_recved(pcb, pb->tot_len);
             _rx_buf = pb;
             _rx_buf_offset = 0;
         }
